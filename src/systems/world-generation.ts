@@ -21,6 +21,11 @@ const SPAWN_DISTANCE = 1000;
 const DESPAWN_DISTANCE = 1000;
 const BG_MOVEMENT_SPEED = 0.1;
 
+const gap = 600;
+const boxHalf = 28;
+const boxFull = 56;
+const ampFull = 44;
+
 export class WorldGenerationSystem {
     // Rightmost edges
     private farthestPlatformX: number = -400;
@@ -199,15 +204,70 @@ export class WorldGenerationSystem {
 
     spawnChallenge() {
         if (!this.textures) return;
+        
+        var patterns = [
+            this.patternA.bind(this),
+            this.patternB.bind(this),
+            this.patternC.bind(this),
+            this.patternD.bind(this),
+            this.patternE.bind(this),
+        ];
 
-        const gap = 600;
-
-        this.spawnAmplifier(this.farthestChallengeX + gap +   0, -32);
-        this.spawnBox(this.farthestChallengeX + gap + 100, -23 - 8);
-        this.spawnAmplifier(this.farthestChallengeX + gap + 100, -56 - 32);
-        this.spawnAmplifier(this.farthestChallengeX + gap + 200, -32);
-
+        patterns[Math.floor(Math.random()*patterns.length)]();
+                
         this.farthestChallengeX += 44 + gap;
+    }
+
+    patternA(){
+        this.spawnAmplifier(this.farthestChallengeX + gap, -30);
+        this.spawnBox(this.farthestChallengeX + gap + 100, -30);
+        this.spawnAmplifier(this.farthestChallengeX + gap + 100, -56 - 32);
+        this.spawnAmplifier(this.farthestChallengeX + gap + 200, -30);
+    }
+
+    patternB(){
+        this.spawnAmplifier(this.farthestChallengeX + gap + 12, -30);
+        this.spawnBox(this.farthestChallengeX + gap + boxFull + boxHalf, -30);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxFull + boxHalf, -30 - boxFull)
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull + boxHalf ) * 2 + boxHalf, -30);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull + boxHalf ) * 2 + boxHalf, -30 - boxFull);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull + boxHalf )* 2 + boxHalf, -30 - boxFull * 2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull + boxHalf )* 3 + boxHalf, -30);
+    }
+
+    patternC(){
+        this.spawnBox(this.farthestChallengeX + gap, -30);
+        this.spawnAmplifier(this.farthestChallengeX + gap, -30 - boxFull);
+        this.spawnBox(this.farthestChallengeX + gap + boxFull, -30);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxFull, -30 - boxFull);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull) * 4, -30 - boxFull);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull) * 4, -30 - boxFull * 2);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull) * 4 + boxFull, -30 - boxFull);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull) * 4 + boxFull, -30 - boxFull * 2);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull) * 8, -30 - boxFull * 2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull) * 8, -30 - boxFull * 3);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull) * 8 + boxFull, -30 - boxFull * 2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull) * 8 + boxFull, -30 - boxFull * 3);
+        this.farthestChallengeX += 200;
+    }
+
+    patternD(){
+        this.spawnBox(this.farthestChallengeX + gap, -30);
+        this.spawnAmplifier(this.farthestChallengeX + gap, -30 - boxFull);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxFull + boxHalf, -30 - boxFull*2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull + boxHalf) * 2, -30 - boxFull*3);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull + boxHalf) * 3, -30 - boxFull*2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + (boxFull + boxHalf) * 4, -30 - boxFull);
+        this.spawnBox(this.farthestChallengeX + gap + (boxFull + boxHalf) * 4, -30);
+    }
+
+    patternE(){
+        this.spawnBox(this.farthestChallengeX + gap, -30);
+        this.spawnBox(this.farthestChallengeX + gap + boxHalf + 12, -30);
+        this.spawnBox(this.farthestChallengeX + gap + boxHalf - 10, -30 - boxFull);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxHalf - 10, -30 - boxFull*2);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxHalf - 10, -30 - boxFull*3);
+        this.spawnAmplifier(this.farthestChallengeX + gap + boxHalf - 10 + 200, -30 - boxFull*5);
     }
 
     run(dt: number) {
