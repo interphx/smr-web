@@ -20,7 +20,21 @@ export class CollisionSystem {
     constructor(
         private storage: EntityStorage
     ) {
+        // this.sortByDistance = this.sortByDistance.bind(this);
+    }
 
+    sortByDistance(origin: Vec2, entities: string[]) {
+        entities.sort((a, b) => {
+            const transformA = this.storage.getComponent(a, Transform);
+            const transformB = this.storage.getComponent(b, Transform);
+
+            const distanceA = Math.abs(transformA.position.x - origin.x) +
+                              Math.abs(transformA.position.y - origin.y);
+            const distanceB = Math.abs(transformB.position.x - origin.x) +
+                              Math.abs(transformB.position.y - origin.y);
+
+            return distanceA - distanceB;
+        });
     }
 
     public run(dt: number) {
@@ -35,7 +49,8 @@ export class CollisionSystem {
                     bodyCollider.collidingEntities.length = 0;
                 }
 
-                collidables.sort((a, b) => {
+                this.sortByDistance(bodyTransform.position, collidables);
+                /*collidables.sort((a, b) => {
                     const transformA = this.storage.getComponent(a, Transform);
                     const transformB = this.storage.getComponent(b, Transform);
 
@@ -45,7 +60,7 @@ export class CollisionSystem {
                                       Math.abs(transformB.position.y - bodyTransform.position.y);
 
                     return distanceA - distanceB;
-                });
+                });*/
 
                 for (let obstacle of collidables) {
                     if (body === obstacle) continue;
