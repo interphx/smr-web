@@ -50,6 +50,8 @@ export class DamageSystem {
 
             this.oldVelocity = body.velocity.x;
             this.oldGhostState = characterData.isGhost();
+
+            body.velocity.x += 0.0000001 / body.velocity.x * dt;
         }
     }
 }
