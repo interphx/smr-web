@@ -58,11 +58,11 @@ export class WorldGenerationSystem {
     }
 
     async initialize() {
-        const platform = await loadImage('resources/images/platform.png');
-        const amplifier = await loadImage('resources/images/amplifier.png');
-        const box = await loadImage('resources/images/box.png');
-        const backgroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`resources/images/background_building_${n}.png`)));
-        const foregroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`resources/images/foreground_building_${n}.png`)));
+        const platform = await loadImage('assets/images/platform.png');
+        const amplifier = await loadImage('assets/images/amplifier.png');
+        const box = await loadImage('assets/images/box.png');
+        const backgroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`assets/images/background_building_${n}.png`)));
+        const foregroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`assets/images/foreground_building_${n}.png`)));
         this.textures = {
             platform,
             amplifier,

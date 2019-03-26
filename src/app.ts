@@ -136,7 +136,7 @@ async function main() {
     storage.setComponent(camera, new Camera(character, Vec2.clone(INITIAL_SCREEN_SIZE)));
     storage.setComponent(camera, new Transform({ x: 0, y: 0 }));
 
-    loadImage('resources/images/character.png')
+    loadImage('assets/images/character.png')
         .then(texture => {
             storage.setComponent(character, new StaticSprite({
                 texture,

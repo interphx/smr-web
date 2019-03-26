@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as webpack from 'webpack';
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const config = {
     context: path.join(__dirname, 'src'),
@@ -20,7 +21,11 @@ const config = {
         new HtmlWebpackPlugin({
             title: 'Super Metal Runner',
             template: 'templates/index.html.ejs'
-        })
+        }),
+        new CopyWebpackPlugin([{
+            from: 'assets/',
+            to: 'assets/'
+        }])
     ],
     module: {
         rules: [
