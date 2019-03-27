@@ -22,10 +22,10 @@ const config = {
             title: 'Super Metal Runner',
             template: 'templates/index.html.ejs'
         }),
-        new CopyWebpackPlugin([{
-            from: 'assets/',
-            to: 'assets/'
-        }])
+        new CopyWebpackPlugin([
+            { from: 'assets/', to: 'assets/' },
+            { from: 'static/', to: '' }
+        ])
     ],
     module: {
         rules: [
