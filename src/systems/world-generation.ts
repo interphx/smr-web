@@ -20,6 +20,10 @@ const despawnableComponents: [typeof Transform, typeof Despawnable] = [Transform
 const SPAWN_DISTANCE = 1000;
 const DESPAWN_DISTANCE = 1000;
 const BG_MOVEMENT_SPEED = 0.1;
+const amplifierRotateFrames = FrameAnimation.generateSpritesheetFrames(
+    Vec2.fromCartesian(44, 32),
+    Vec2.fromCartesian(352, 32)
+);
 
 const gap = 600;
 const boxHalf = 28;
@@ -158,8 +162,7 @@ export class WorldGenerationSystem {
         storage.setComponent(amplifier, new Collider(
             Aabb.fromCenteredSize(44, 32),
             ColliderType.Trigger,
-            CollisionLayer.Collectible,
-            //CollisionLayer.Character
+            CollisionLayer.Collectible
         ));
         storage.setComponent(amplifier, new Collectible(10));
         storage.setComponent(amplifier, new StaticSprite({
@@ -171,10 +174,7 @@ export class WorldGenerationSystem {
             animations: {
                 'rotate': {
                     duration: Milliseconds.from(1000),
-                    frames: FrameAnimation.generateSpritesheetFrames(
-                        Vec2.fromCartesian(44, 32),
-                        Vec2.fromCartesian(352, 32)
-                    ),
+                    frames: amplifierRotateFrames,
                     mode: 'repeat'
                 }
             },
@@ -297,7 +297,7 @@ export class WorldGenerationSystem {
 
             // Spawning
             if (this.farthestPlatformX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 10; ++i) {
+                for (let i = 0; i < 15; ++i) {
                     this.spawnPlatform();
                 }
             }

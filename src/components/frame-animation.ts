@@ -31,11 +31,13 @@ export class FrameAnimation {
     private animations: {[name: string]: InitializedAnimation};
     private currentAnimation: string | null;
     private position: number;
+    private speed: number;
 
     constructor(options: {
         animations: {[name: string]: Animation},
         currentAnimation?: string,
-        position?: number
+        position?: number,
+        speed?: number
     }) {
         this.animations = {};
         for (let name in options.animations) {
@@ -60,10 +62,13 @@ export class FrameAnimation {
         }
         this.currentAnimation = options.currentAnimation || null;
         this.position = options.position || 0;
+        this.speed = options.speed || 1;
     }
 
     advancePosition(amount: number) {
         if (!this.currentAnimation) return;
+
+        amount *= this.speed;
 
         const mode = this.animations[this.currentAnimation].mode;
 
@@ -92,9 +97,19 @@ export class FrameAnimation {
         this.advancePosition(position);
     }
 
+    setSpeed(speed: number) {
+        this.speed = Math.max(0.0001, speed);
+    }
+
     playAnimation(name: string, position: number = 0) {
         this.currentAnimation = name;
         this.position = position;
+    }
+
+    playOrContinueAnimation(name: string) {
+        if (this.currentAnimation !== name) {
+            this.playAnimation(name);
+        }
     }
 
     stopAnimation() {

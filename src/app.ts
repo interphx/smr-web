@@ -31,28 +31,29 @@ import { Collectible } from 'components/collectible';
 import { setup } from 'setup';
 import { DamageSystem } from 'systems/damage';
 import { DebugRenderingSystem } from 'systems/debug-rendering';
+import { SpeedSystem } from 'systems/speed';
 
-function getScreenSize() {
-    const aspect = 4 / 3;
+const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
+function getScreenSize(targetSize: Vec2) {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    if (windowWidth < windowHeight) {
-        const desiredWidth = windowWidth;
-        const desiredHeight = windowHeight / aspect;
+    const targetAspectRatio = targetSize.x / targetSize.y;
+    const screenAspectRatio = windowWidth / windowHeight;
 
-        return { x: desiredWidth, y: desiredHeight };
-    } else {
-        const desiredHeight = windowHeight;
-        const desiredWidth = desiredHeight * aspect;
-
-        return { x: desiredWidth, y: desiredHeight };
-    }
+    const width = (screenAspectRatio > targetAspectRatio)
+        ? targetSize.x * (windowHeight / targetSize.y)
+        : windowWidth;
+    const height = (screenAspectRatio > targetAspectRatio)
+        ? windowHeight
+        : targetSize.y * (windowWidth / targetSize.x);
+    
+    return Vec2.fromCartesian(width, height);
 }
 
 async function main() {
-    const INITIAL_SCREEN_SIZE = getScreenSize();
+    const INITIAL_SCREEN_SIZE = getScreenSize(TARGET_SIZE);
 
     const storage = new EntityStorage();
     storage.registerComponentType(Transform);
@@ -70,7 +71,7 @@ async function main() {
 
     const renderer = new Renderer({
         size           : Vec2.clone(INITIAL_SCREEN_SIZE),
-        resolution     : Vec2.fromCartesian(640, 480),
+        resolution     : TARGET_SIZE,
         backgroundColor: 'black'
     });
 
@@ -86,7 +87,8 @@ async function main() {
     const worldGenerationSystem = new WorldGenerationSystem(storage);
     const scoringSystem = new ScoringSystem(storage);
     const damageSystem = new DamageSystem(storage);
-    const debugRendering = new DebugRenderingSystem(storage, renderer);
+    const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
+    const speedSystem = new SpeedSystem(storage);
 
     await worldGenerationSystem.waitForInitialization();
 
@@ -100,12 +102,15 @@ async function main() {
             cameraSystem.run(dt);
         },
         onVariableUpdate: (dt, alpha) => {
+            // if (Math.random() < 0.01) console.log(dt);
+
             jumpingSystem.run(dt);
             animationSystem.run(dt);
             renderingSystem.run(dt, alpha);
-            // debugRendering.run(dt, alpha);
+            // debugRenderingSystem.run(dt, alpha);
             scoringSystem.run(dt);
             damageSystem.run(dt);
+            speedSystem.run(dt);
 
             rareUpdateCounter += 1;
             if (rareUpdateCounter % 3 === 0) {
@@ -136,7 +141,7 @@ async function main() {
     storage.setComponent(camera, new Camera(character, Vec2.clone(INITIAL_SCREEN_SIZE)));
     storage.setComponent(camera, new Transform({ x: 0, y: 0 }));
 
-    loadImage('assets/images/character.png')
+    await loadImage('assets/images/character.png')
         .then(texture => {
             storage.setComponent(character, new StaticSprite({
                 texture,
@@ -149,11 +154,21 @@ async function main() {
                 Vec2.fromCartesian(texture.width, texture.height)
             ).slice(1, 7);
 
+            const jumpFrames = FrameAnimation.generateSpritesheetFrames(
+                Vec2.fromCartesian(128, 128),
+                Vec2.fromCartesian(texture.width, texture.height)
+            ).slice(7, 9);
+
             storage.setComponent(character, new FrameAnimation({
                 animations: {
                     'run': {
-                        duration: Milliseconds.from(1000),
+                        duration: Milliseconds.from(900),
                         frames: runFrames,
+                        mode: 'repeat'
+                    },
+                    'jump': {
+                        duration: Milliseconds.from(600),
+                        frames: jumpFrames,
                         mode: 'repeat'
                     }
                 },

@@ -39,7 +39,7 @@ export class GameLoop {
 
         const currentTime   = getTime();
         const currentDelta  = Math.max(0, Math.min(currentTime - this.lastUpdateTime, this.maxTimestep));
-        this.lastDelta      = this.lastDelta * 0.2 + currentDelta * 0.8;
+        this.lastDelta      = this.lastDelta * 0.8 + currentDelta * 0.2;
         const delta         = this.lastDelta;
         this.lastUpdateTime = currentTime;
         this.accumulator += delta;

@@ -31,14 +31,12 @@ export class DamageSystem {
 
             characterData.tickGhost(dt);
             if (this.oldGhostState && !characterData.isGhost()) {
-                console.log('No longer ghost');
                 collider.collidesWith |= CollisionLayer.Obstacle;
                 sprite.isGhost = false;
             }
 
             if (!this.oldGhostState && !characterData.isGhost() && !isNaN(this.oldVelocity) && this.oldVelocity > body.velocity.x) {
                 lives.subtract();
-                console.log('Damaged');
                 if (lives.remainingLives <= 0) {
                     throw new Error(`Game over`);
                 }

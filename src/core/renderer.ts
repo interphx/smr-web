@@ -28,6 +28,8 @@ export class Renderer {
         this.canvas.style.margin = '0 auto';
         this.canvas.style.width = `${this.resolution.x * scale.x}`;
         this.canvas.style.height = `${this.resolution.y * scale.y}`;
+        this.canvas.style.maxWidth = `100vw`;
+        this.canvas.style.maxHeight = `100vh`;
 
         window.document.body.style.backgroundColor = this.backgroundColor;
 

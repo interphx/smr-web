@@ -7,6 +7,7 @@ import { EntityStorage } from 'core/entity-storage';
 import { Vec2 } from 'types/vec2';
 import { lerp } from 'utils/math';
 import { Character } from 'components/character';
+import { Aabb } from 'types/aabb';
 
 const spriteComponents: [typeof Transform, typeof StaticSprite] = [Transform, StaticSprite];
 
@@ -43,9 +44,6 @@ export class RenderingSystem {
             
             const cameraPosX = cameraTransform.getInterpolatedX(alpha);
             const cameraPosY = cameraTransform.getInterpolatedY(alpha);
-            //cameraTransform.sync(alpha);
-            //const cameraPosX = cameraTransform.position.x;
-            //const cameraPosY = cameraTransform.position.y;
 
             for (let entity of sprites) {
                 const [transform, sprite] = storage.getComponents(entity, spriteComponents);
@@ -53,9 +51,6 @@ export class RenderingSystem {
                 const pos = this.tmpPosition;
                 pos.x = transform.getInterpolatedX(alpha) - (sprite.targetSize.x / 2) - cameraPosX;
                 pos.y = transform.getInterpolatedY(alpha) - (sprite.targetSize.y / 2) - cameraPosY;
-                //transform.sync(alpha);
-                //pos.x = transform.position.x - (sprite.targetSize.x / 2) - cameraPosX;
-                //pos.y = transform.position.y - (sprite.targetSize.y / 2) - cameraPosY;
 
                 if (sprite.isGhost && Math.random() < 0.5) continue;
                 renderer.drawImageRect(pos, sprite.sourceRect, sprite.targetSize, sprite.texture);

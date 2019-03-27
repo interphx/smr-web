@@ -5,6 +5,10 @@ export class PointerInput {
         const press = () => this.pointerDown = true;
         const unpress = () => this.pointerDown = false;
 
+        window.addEventListener('contextmenu', event => {
+            event.preventDefault();
+        });
+
         window.addEventListener('mousedown', press);
         window.addEventListener('touchstart', press);
         window.addEventListener('pointerdown', press);
