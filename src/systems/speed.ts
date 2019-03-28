@@ -1,11 +1,6 @@
 import { EntityStorage } from 'core/entity-storage';
 import { Milliseconds } from 'types/milliseconds';
-import { Transform } from 'components/transform';
 import { Body } from 'components/body';
-import { Collider, CollisionLayer } from 'components/collider';
-import { Character } from 'components/character';
-import { Lives } from 'components/lives';
-import { StaticSprite } from 'components/static-sprite';
 import { FrameAnimation } from 'components/frame-animation';
 
 const characterComponents: [

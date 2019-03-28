@@ -19,13 +19,11 @@ import { Body } from 'components/body';
 import { Collider, ColliderType, CollisionLayer } from 'components/collider';
 import { Aabb } from 'types/aabb';
 import { CollisionSystem } from 'systems/collision';
-import { range } from 'utils/iterable';
 import { Jump } from 'components/jump';
 import { JumpingSystem } from 'systems/jumping';
 import { Despawnable } from 'components/despawnable';
 import { WorldGenerationSystem } from 'systems/world-generation';
 import { ScoringSystem } from 'systems/scoring';
-import { Lives } from 'components/lives';
 import { PointerInput } from 'input/pointer';
 import { Collectible } from 'components/collectible';
 import { setup } from 'setup';
@@ -65,7 +63,6 @@ async function main() {
     storage.registerComponentType(Collider);
     storage.registerComponentType(Jump);
     storage.registerComponentType(Despawnable);
-    storage.registerComponentType(Lives);
     storage.registerComponentType(Collectible);
     setup(storage);
 
@@ -131,7 +128,6 @@ async function main() {
         CollisionLayer.Character,
         CollisionLayer.World | CollisionLayer.Obstacle | CollisionLayer.Collectible
     ));
-    storage.setComponent(character, new Lives());
     storage.setComponent(character, new Jump({
         speed: 0.6,
         maxTime: Milliseconds.from(400)

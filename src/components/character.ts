@@ -3,6 +3,8 @@ export class Character {
 
     public score: number = 0;
     public ghostTime: number = 0;
+    public maxLives: number = 3;
+    public remainingLives: number = 3;
 
     constructor() {
 
@@ -23,5 +25,15 @@ export class Character {
 
     isGhost() {
         return this.ghostTime > 0;
+    }
+
+    subtract() {
+        if (this.remainingLives > 0) {
+            this.remainingLives -= 1;
+        }
+    }
+
+    isAlive() {
+        return this.remainingLives > 0;
     }
 }
