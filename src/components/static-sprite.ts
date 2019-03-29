@@ -10,6 +10,7 @@ export class StaticSprite {
     public sourceRect: Aabb;
     public targetSize: Vec2;
     public isGhost: boolean;
+    // public opacity: number;
 
     constructor(
         options: {
@@ -24,5 +25,6 @@ export class StaticSprite {
         this.sourceRect = options.rect || Aabb.fromSize(0, 0, this.texture.width, this.texture.height);
         this.targetSize = options.targetSize || Vec2.fromCartesian(this.sourceRect.width, this.sourceRect.height);
         this.isGhost = false;
+        // this.opacity = (options.opacity === undefined) ? 1 : options.opacity;
     }
 }

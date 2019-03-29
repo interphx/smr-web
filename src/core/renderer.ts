@@ -43,6 +43,7 @@ export class Renderer {
         (this.context as any).mozImageSmoothingEnabled = true;
         this.context.imageSmoothingEnabled = true;
         this.context.scale(scale.x * pixelRatio, scale.y * pixelRatio);
+        this.context.textAlign = 'center';
 
         this.context.fillStyle = this.backgroundColor;
         this.context.translate(this.resolution.x / 2, this.resolution.y / 2);
@@ -83,12 +84,40 @@ export class Renderer {
         );
     }
 
+    public drawImageRectWithOpacity(
+        topLeft: Vec2,
+        sourceRect: Aabb,
+        targetSize: Vec2,
+        image: HTMLImageElement | HTMLCanvasElement,
+        opacity: number
+    ) {
+        //const oldAlpha = this.context.globalAlpha;
+        this.context.globalAlpha = opacity;
+        this.context.drawImage(
+            image,
+            sourceRect.left, sourceRect.top,
+            sourceRect.width, sourceRect.height,
+            topLeft.x, topLeft.y,
+            targetSize.x, targetSize.y
+        );
+        //this.context.globalAlpha = oldAlpha;
+    }
+
     public drawText(x: number, y: number, text: string) {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'black';
         this.context.font = '24px Tahoma';
         this.context.fillText(text, x, y);
         this.context.strokeText(text, x, y);
+    }
+
+    public drawTextWithOpacity(x: number, y: number, text: string, opacity: number) {
+        this.context.fillStyle = '#f5f59c';
+        this.context.strokeStyle = 'black';
+        this.context.font = '24px Tahoma';
+        this.context.globalAlpha = opacity;
+        this.context.fillText(text, x, y);
+        this.context.globalAlpha = 1;
     }
 
     public clear(color: string = this.backgroundColor) {

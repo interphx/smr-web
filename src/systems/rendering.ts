@@ -10,8 +10,11 @@ import { Character } from 'components/character';
 import { Aabb } from 'types/aabb';
 import { loadImage } from 'utils/ajax';
 import { Image } from 'types/image';
+import { Text } from 'components/text';
 
 const spriteComponents: [typeof Transform, typeof StaticSprite] = [Transform, StaticSprite];
+
+const textComponents: [typeof Transform, typeof Text] = [Transform, Text];
 
 const cameraComponents: [typeof Transform, typeof Camera] = [Transform, Camera];
 
@@ -57,6 +60,7 @@ export class RenderingSystem {
 
         const cameras = storage.getEntitiesWith(cameraComponents);
         const sprites = storage.getEntitiesWith(spriteComponents);
+        const texts   = storage.getEntitiesWith(textComponents);
 
         sprites.sort((a, b) => {
             const spriteA = storage.getComponent(a, StaticSprite);
@@ -79,6 +83,15 @@ export class RenderingSystem {
 
                 if (sprite.isGhost && Math.random() < 0.5) continue;
                 renderer.drawImageRect(pos, sprite.sourceRect, sprite.targetSize, sprite.texture);
+            }
+
+            for (let entity of texts) {
+                const [transform, text] = storage.getComponents(entity, textComponents);
+                const pos = this.tmpPosition;
+                pos.x = transform.getInterpolatedX(alpha) - cameraPosX;
+                pos.y = transform.getInterpolatedY(alpha) - cameraPosY;
+
+                renderer.drawTextWithOpacity(pos.x, pos.y, text.text, text.opacity);
             }
         }
 

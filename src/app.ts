@@ -30,6 +30,8 @@ import { setup } from 'setup';
 import { DamageSystem } from 'systems/damage';
 import { DebugRenderingSystem } from 'systems/debug-rendering';
 import { SpeedSystem } from 'systems/speed';
+import { Text } from 'components/text';
+import { FloatingText } from 'components/floating-text';
 
 const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
@@ -64,6 +66,8 @@ async function main() {
     storage.registerComponentType(Jump);
     storage.registerComponentType(Despawnable);
     storage.registerComponentType(Collectible);
+    storage.registerComponentType(Text);
+    storage.registerComponentType(FloatingText);
     setup(storage);
 
     const renderer = new Renderer({
@@ -88,6 +92,7 @@ async function main() {
     const speedSystem = new SpeedSystem(storage);
 
     await worldGenerationSystem.waitForInitialization();
+    await renderingSystem.waitForInitialization();
 
     let rareUpdateCounter = 0;
 

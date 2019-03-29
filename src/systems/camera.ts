@@ -28,7 +28,7 @@ export class CameraSystem {
 
                 if (targetTransform) {
                     cameraTransform.moveTo(
-                        targetTransform.position.x + 250,
+                        targetTransform.position.x + 200,
                         //targetTransform.position.y
                         -240
                     );
