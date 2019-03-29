@@ -104,7 +104,7 @@ async function main() {
             jumpingSystem.run(dt);
             animationSystem.run(dt);
             renderingSystem.run(dt, alpha);
-            // debugRenderingSystem.run(dt, alpha);
+            debugRenderingSystem.run(dt, alpha);
             scoringSystem.run(dt);
             damageSystem.run(dt);
             speedSystem.run(dt);
