@@ -8,6 +8,8 @@ import { Vec2 } from 'types/vec2';
 import { lerp } from 'utils/math';
 import { Character } from 'components/character';
 import { Aabb } from 'types/aabb';
+import { loadImage } from 'utils/ajax';
+import { Image } from 'types/image';
 
 const spriteComponents: [typeof Transform, typeof StaticSprite] = [Transform, StaticSprite];
 
@@ -15,14 +17,37 @@ const cameraComponents: [typeof Transform, typeof Camera] = [Transform, Camera];
 
 const characterComponents: [typeof Character] = [Character];
 
+const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
+const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
+const tmpHeartPos = Vec2.fromCartesian(0, 0);
+
 export class RenderingSystem {
     private tmpPosition: Vec2 = { x: 0, y: 0 };
+    private textures: {
+        heart: Image;
+    } | null = null;
 
     constructor(
         private storage: EntityStorage,
         private renderer: Renderer
     ) {
+        this.initialize();
+    }
 
+    public async waitForInitialization() {
+        return new Promise(resolve => {
+            const interval = setInterval(() => {
+                if (this.textures) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 400);
+        });
+    }
+
+    async initialize() {
+        const heart = await loadImage('assets/images/heart.png');
+        this.textures = { heart };
     }
 
     run(dt: Milliseconds, alpha: number) {
@@ -61,6 +86,17 @@ export class RenderingSystem {
         if (characters.length > 0) {
             const characterData = this.storage.getComponent(characters[0], Character);
             renderer.drawText(0, -200, characterData.score.toFixed(0));
+
+            if (this.textures) {
+                for (let i = 0; i < characterData.maxLives; ++i) {
+                    const rect = ((i + 1) <= characterData.remainingLives)
+                        ? heartFullRect
+                        : heartEmptyRect;
+                    tmpHeartPos.x = -320 + 30 + i * (32 + 8);
+                    tmpHeartPos.y = -240 + 40;
+                    renderer.drawImageRect(tmpHeartPos, rect, rect.size, this.textures.heart);
+                }
+            }
         }
 
     }

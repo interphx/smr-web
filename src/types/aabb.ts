@@ -3,14 +3,28 @@ import { Vec2 } from './vec2';
 export class Aabb {
     public left: number;
     public top: number;
-    public width: number;
-    public height: number;
+    public size: Vec2;
 
     private constructor(left: number, top: number, width: number, height: number) {
         this.left = left;
         this.top = top;
-        this.width = width;
-        this.height = height;
+        this.size = Vec2.fromCartesian(width, height);
+    }
+
+    get width() {
+        return this.size.x;
+    }
+
+    get height() {
+        return this.size.y;
+    }
+
+    set width(value: number) {
+        this.size.x = value;
+    }
+
+    set height(value: number) {
+        this.size.y = value;
     }
 
     get right() {

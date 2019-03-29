@@ -37,6 +37,9 @@ export class ScoringSystem {
                 if (collidingCollectible) {
                     data.addScore(collidingCollectible.score);
                     storage.removeEntity(collidingEntity);
+
+                    //const text = storage.createEntity();
+                    
                 }
             }
         }
