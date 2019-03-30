@@ -2,11 +2,9 @@ import { EntityStorage } from 'core/entity-storage';
 import { Milliseconds } from 'types/milliseconds';
 import { Body } from 'components/body';
 import { FrameAnimation } from 'components/frame-animation';
+import { all } from 'core/aspect';
 
-const characterComponents: [
-    typeof Body,
-    typeof FrameAnimation
-] = [Body, FrameAnimation];
+const characterAspect = all(Body, FrameAnimation);
 
 export class SpeedSystem {
     constructor(private storage: EntityStorage) {
@@ -14,11 +12,9 @@ export class SpeedSystem {
     }
 
     run(dt: Milliseconds) {
-        const characters = this.storage.getEntitiesWith(characterComponents);
+        const characters = this.storage.getByAspect(characterAspect);
 
-        for (let character of characters) {
-            const [body, animation] = this.storage.getComponents(character, characterComponents);
-
+        for (let { entity: character, components: [body, animation] } of characters) {
             body.velocity.x += 0.0000001 / Math.max(0.001, body.velocity.x) * dt;
 
             animation.setSpeed(1 + body.velocity.x * 2);

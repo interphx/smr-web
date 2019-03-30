@@ -8,18 +8,10 @@ import { Collider } from 'components/collider';
 import { Collectible } from 'components/collectible';
 import { Text } from 'components/text';
 import { FloatingText } from 'components/floating-text';
+import { all } from 'core/aspect';
 
-const characterComponents: [
-    typeof Collider,
-    typeof Body,
-    typeof Character
-] = [Collider, Body, Character];
-
-const floatingTextComponents: [
-    typeof Transform,
-    typeof Text,
-    typeof FloatingText
-] = [Transform, Text, FloatingText];
+const characterAspect = all(Collider, Body, Character);
+const floatingTextAspect = all(Transform, Text, FloatingText);
 
 export class ScoringSystem {
     constructor(
@@ -31,11 +23,9 @@ export class ScoringSystem {
     run(dt: Milliseconds) {
         const { storage } = this;
 
-        const characters = storage.getEntitiesWith(characterComponents);
+        const characters = storage.getByAspect(characterAspect);
 
-        for (let character of characters) {
-            const [collider, body, data] = storage.getComponents(character, characterComponents);
-
+        for (let { entity: character, components: [collider, body, data] } of characters) {
             if (!data.isAlive()) continue;
             
             data.addScore(dt * 0.01 * Math.max(0, body.velocity.x));
@@ -55,8 +45,7 @@ export class ScoringSystem {
             }
         }
 
-        for (let floatingText of storage.getEntitiesWith(floatingTextComponents)) {
-            const [transform, text, floating] = storage.getComponents(floatingText, floatingTextComponents);
+        for (let { entity: floatingText, components: [transform, text, ] } of storage.getByAspect(floatingTextAspect)) {
             transform.moveBy(0, -0.07 * dt);
             text.opacity -= 0.001 * dt;
             if (text.opacity <= 0) {

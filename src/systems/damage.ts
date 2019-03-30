@@ -4,13 +4,9 @@ import { Body } from 'components/body';
 import { Collider, CollisionLayer } from 'components/collider';
 import { Character } from 'components/character';
 import { StaticSprite } from 'components/static-sprite';
+import { all } from 'core/aspect';
 
-const characterComponents: [
-    typeof Body,
-    typeof Collider,
-    typeof Character,
-    typeof StaticSprite
-] = [Body, Collider, Character, StaticSprite];
+const characterAspect = all(Body, Collider, Character, StaticSprite);
 
 export class DamageSystem {
     private oldVelocity: number = NaN;
@@ -21,11 +17,9 @@ export class DamageSystem {
     }
 
     run(dt: Milliseconds) {
-        const characters = this.storage.getEntitiesWith(characterComponents);
+        const characters = this.storage.getByAspect(characterAspect);
 
-        for (let character of characters) {
-            const [body, collider, characterData, sprite] = this.storage.getComponents(character, characterComponents);
-
+        for (let { components: [body, collider, characterData, sprite] } of characters) {
             characterData.tickGhost(dt);
             if (this.oldGhostState && !characterData.isGhost()) {
                 collider.collidesWith |= CollisionLayer.Obstacle;

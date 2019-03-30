@@ -11,14 +11,20 @@ import { Aabb } from 'types/aabb';
 import { loadImage } from 'utils/ajax';
 import { Image } from 'types/image';
 import { Text } from 'components/text';
+import * as aspect from 'core/aspect';
 
+const spriteAspect = aspect.all(Transform, StaticSprite);
+const textAspect = aspect.all(Transform, Text);
+const cameraAspect = aspect.all(Transform, Camera);
+const characterAspect = aspect.all(Character);
+/*
 const spriteComponents: [typeof Transform, typeof StaticSprite] = [Transform, StaticSprite];
 
 const textComponents: [typeof Transform, typeof Text] = [Transform, Text];
 
 const cameraComponents: [typeof Transform, typeof Camera] = [Transform, Camera];
 
-const characterComponents: [typeof Character] = [Character];
+const characterComponents: [typeof Character] = [Character];*/
 
 const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
@@ -58,25 +64,20 @@ export class RenderingSystem {
 
         renderer.clear();
 
-        const cameras = storage.getEntitiesWith(cameraComponents);
-        const sprites = storage.getEntitiesWith(spriteComponents);
-        const texts   = storage.getEntitiesWith(textComponents);
+        const cameras    = storage.getByAspect(cameraAspect);
+        const sprites    = storage.getByAspect(spriteAspect).slice();
+        const texts      = storage.getByAspect(textAspect);
+        const characters = storage.getByAspect(characterAspect);
 
         sprites.sort((a, b) => {
-            const spriteA = storage.getComponent(a, StaticSprite);
-            const spriteB = storage.getComponent(b, StaticSprite);
-            return spriteA.zIndex - spriteB.zIndex;
+            return a.components[1].zIndex - b.components[1].zIndex;
         })
 
-        for (let camera of cameras) {
-            const [cameraTransform, cameraData] = storage.getComponents(camera, cameraComponents);
-            
+        for (let { components: [cameraTransform, cameraData] } of cameras) {
             const cameraPosX = cameraTransform.getInterpolatedX(alpha);
             const cameraPosY = cameraTransform.getInterpolatedY(alpha);
 
-            for (let entity of sprites) {
-                const [transform, sprite] = storage.getComponents(entity, spriteComponents);
-
+            for (let { components: [transform, sprite] } of sprites) {
                 const pos = this.tmpPosition;
                 pos.x = transform.getInterpolatedX(alpha) - (sprite.targetSize.x / 2) - cameraPosX;
                 pos.y = transform.getInterpolatedY(alpha) - (sprite.targetSize.y / 2) - cameraPosY;
@@ -85,8 +86,7 @@ export class RenderingSystem {
                 renderer.drawImageRect(pos, sprite.sourceRect, sprite.targetSize, sprite.texture);
             }
 
-            for (let entity of texts) {
-                const [transform, text] = storage.getComponents(entity, textComponents);
+            for (let { components: [transform, text] } of texts) {
                 const pos = this.tmpPosition;
                 pos.x = transform.getInterpolatedX(alpha) - cameraPosX;
                 pos.y = transform.getInterpolatedY(alpha) - cameraPosY;
@@ -95,9 +95,8 @@ export class RenderingSystem {
             }
         }
 
-        const characters = this.storage.getEntitiesWith(characterComponents);
         if (characters.length > 0) {
-            const characterData = this.storage.getComponent(characters[0], Character);
+            const [characterData] = characters[0].components;
             renderer.drawText(0, -200, characterData.score.toFixed(0));
 
             if (this.textures) {
@@ -111,6 +110,5 @@ export class RenderingSystem {
                 }
             }
         }
-
     }
 }

@@ -5,9 +5,10 @@ import { Collider, ColliderType, CollisionLayer } from 'components/collider';
 import { Vec2 } from 'types/vec2';
 import { Aabb } from 'types/aabb';
 import { Character } from 'components/character';
+import { all } from 'core/aspect';
 
-const collidableBodyComponents: [typeof Transform, typeof Collider, typeof Body] = [Transform, Collider, Body];
-const collidableComponents: [typeof Transform, typeof Collider] = [Transform, Collider];
+const collidableBodyAspect = all(Transform, Collider, Body);
+const collidableAspect = all(Transform, Collider);
 
 const iterations = 1;
 const tolerance  = 0.0001;
@@ -20,13 +21,13 @@ export class CollisionSystem {
     constructor(
         private storage: EntityStorage
     ) {
-        // this.sortByDistance = this.sortByDistance.bind(this);
+
     }
 
-    sortByDistance(origin: Vec2, entities: string[]) {
+    sortByDistance(origin: Vec2, entities: { entity: string }[]) {
         entities.sort((a, b) => {
-            const transformA = this.storage.getComponent(a, Transform);
-            const transformB = this.storage.getComponent(b, Transform);
+            const transformA = this.storage.getComponent(a.entity, Transform);
+            const transformB = this.storage.getComponent(b.entity, Transform);
 
             const distanceA = Math.abs(transformA.position.x - origin.x) +
                               Math.abs(transformA.position.y - origin.y);
@@ -39,33 +40,19 @@ export class CollisionSystem {
 
     public run(dt: number) {
         for (let i = 0; i < iterations; ++i) {
-            const collidableBodies = this.storage.getEntitiesWith(collidableBodyComponents);
-            const collidables = this.storage.getEntitiesWith(collidableComponents);
+            const collidableBodies = this.storage.getByAspect(collidableBodyAspect);
+            const collidables = this.storage.getByAspect(collidableAspect).slice();
 
-            for (let body of collidableBodies) {
-                const [bodyTransform, bodyCollider, bodyData] = this.storage.getComponents(body, collidableBodyComponents);
+            for (let { entity: body, components: [bodyTransform, bodyCollider, bodyData] } of collidableBodies) {
                 if (i === 0) {
                     bodyData.isLanded = false;
                     bodyCollider.collidingEntities.length = 0;
                 }
 
                 this.sortByDistance(bodyTransform.position, collidables);
-                /*collidables.sort((a, b) => {
-                    const transformA = this.storage.getComponent(a, Transform);
-                    const transformB = this.storage.getComponent(b, Transform);
 
-                    const distanceA = Math.abs(transformA.position.x - bodyTransform.position.x) +
-                                      Math.abs(transformA.position.y - bodyTransform.position.y);
-                    const distanceB = Math.abs(transformB.position.x - bodyTransform.position.x) +
-                                      Math.abs(transformB.position.y - bodyTransform.position.y);
-
-                    return distanceA - distanceB;
-                });*/
-
-                for (let obstacle of collidables) {
+                for (let { entity: obstacle, components: [obstacleTransform, obstacleCollider] } of collidables) {
                     if (body === obstacle) continue;
-
-                    const [obstacleTransform, obstacleCollider] = this.storage.getComponents(obstacle, collidableComponents);
 
                     if ((bodyCollider.collidesWith & obstacleCollider.collisionLayers) === CollisionLayer.None) continue;
 

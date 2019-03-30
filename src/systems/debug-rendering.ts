@@ -8,10 +8,10 @@ import { Vec2 } from 'types/vec2';
 import { lerp } from 'utils/math';
 import { Character } from 'components/character';
 import { Collider } from 'components/collider';
+import { all } from 'core/aspect';
 
-const colliderComponents: [typeof Transform, typeof Collider] = [Transform, Collider];
-
-const cameraComponents: [typeof Transform, typeof Camera] = [Transform, Camera];
+const colliderAspect = all(Transform, Collider);
+const cameraAspect = all(Transform, Camera);
 
 export class DebugRenderingSystem {
     private tmpPosition: Vec2 = { x: 0, y: 0 };
@@ -26,18 +26,15 @@ export class DebugRenderingSystem {
     run(dt: Milliseconds, alpha: number) {
         const { storage, renderer } = this;
 
-        const cameras = storage.getEntitiesWith(cameraComponents);
-        const colliders = storage.getEntitiesWith(colliderComponents);
+        const cameras = storage.getByAspect(cameraAspect);
+        const colliders = storage.getByAspect(colliderAspect);
 
-        for (let camera of cameras) {
-            const [cameraTransform] = storage.getComponents(camera, cameraComponents);
+        for (let { components: [cameraTransform, cameraData] } of cameras) {
             
             const cameraPosX = cameraTransform.getInterpolatedX(alpha);
             const cameraPosY = cameraTransform.getInterpolatedY(alpha);
 
-            for (let entity of colliders) {
-                const [transform, collider] = storage.getComponents(entity, colliderComponents);
-
+            for (let { components: [transform, collider] } of colliders) {
                 const pos = this.tmpPosition;
                 pos.x = transform.getInterpolatedX(alpha) - collider.aabb.halfWidth - cameraPosX;
                 pos.y = transform.getInterpolatedY(alpha) - collider.aabb.halfHeight - cameraPosY;

@@ -1,8 +1,9 @@
 import { EntityStorage } from 'core/entity-storage';
 import { Body } from 'components/body';
 import { Transform } from 'components/transform';
+import { all } from 'core/aspect';
 
-const bodyComponents: [typeof Transform, typeof Body] = [Transform, Body];
+const bodyAspect = all(Transform, Body);
 
 const g = 0.002;
 
@@ -14,10 +15,9 @@ export class PhysicsSystem {
     }
 
     public run(dt: number) {
-        const bodies = this.storage.getEntitiesWith(bodyComponents);
+        const bodies = this.storage.getByAspect(bodyAspect);
 
-        for (let body of bodies) {
-            const [transform, bodyData] = this.storage.getComponents(body, bodyComponents);
+        for (let { components: [transform, bodyData] } of bodies) {
             if (bodyData.isAffectedByGravity) {
                 bodyData.velocity.y += g * dt;
             }

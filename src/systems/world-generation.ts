@@ -13,9 +13,10 @@ import { Collectible } from 'components/collectible';
 import { FrameAnimation } from 'components/frame-animation';
 import { Milliseconds } from 'types/milliseconds';
 import { Body } from 'components/body';
+import { all } from 'core/aspect';
 
-const characterComponents: [typeof Transform, typeof Character] = [Transform, Character];
-const despawnableComponents: [typeof Transform, typeof Despawnable] = [Transform, Despawnable];
+const characterAspect = all(Transform, Character);
+const despawnableAspect = all(Transform, Despawnable);
 
 const SPAWN_DISTANCE = 1000;
 const DESPAWN_DISTANCE = 1000;
@@ -93,16 +94,18 @@ export class WorldGenerationSystem {
         );
 
         const building = storage.createEntity();
-        storage.setComponent(building, new Transform({
-            x: this.farthestForegroundX + buildingSize.x / 2,
-            y: -(buildingSize.y / 2)
-        }));
-        storage.setComponent(building, new Despawnable());
-        storage.setComponent(building, new StaticSprite({
-            texture,
-            zIndex: -1,
-            targetSize: buildingSize
-        }));
+        storage.setComponents(building, [
+            new Transform({
+                x: this.farthestForegroundX + buildingSize.x / 2,
+                y: -(buildingSize.y / 2)
+            }),
+            new Despawnable(),
+            new StaticSprite({
+                texture,
+                zIndex: -1,
+                targetSize: buildingSize
+            })
+        ]);
         this.farthestForegroundX += buildingSize.x;
     }
 
@@ -119,20 +122,22 @@ export class WorldGenerationSystem {
         );
 
         const building = storage.createEntity();
-        storage.setComponent(building, new Transform({
-            x: this.farthestBackgroundX + buildingSize.x / 2,
-            y: -180 - (buildingSize.y / 2)
-        }));
-        storage.setComponent(building, new Despawnable());
-        storage.setComponent(building, new StaticSprite({
-            texture,
-            zIndex: -2,
-            targetSize: buildingSize
-        }));
-        storage.setComponent(building, new Body({
-            velocity: Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0),
-            isAffectedByGravity: false
-        }));
+        storage.setComponents(building, [
+            new Transform({
+                x: this.farthestBackgroundX + buildingSize.x / 2,
+                y: -180 - (buildingSize.y / 2)
+            }),
+            new Despawnable(),
+            new StaticSprite({
+                texture,
+                zIndex: -2,
+                targetSize: buildingSize
+            }),
+            new Body({
+                velocity: Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0),
+                isAffectedByGravity: false
+            })
+        ]);
         this.farthestBackgroundX += buildingSize.x;
     }
 
@@ -142,13 +147,15 @@ export class WorldGenerationSystem {
         const { storage } = this;
 
         const platform = storage.createEntity();
-        storage.setComponent(platform, new Transform({ x: this.farthestPlatformX + 16, y: 0 }));
-        storage.setComponent(platform, new Collider(Aabb.fromCenteredSize(32, 8)));
-        storage.setComponent(platform, new Despawnable());
-        storage.setComponent(platform, new StaticSprite({
-            texture: this.textures.platform,
-            zIndex: 0
-        }));
+        storage.setComponents(platform, [
+            new Transform({ x: this.farthestPlatformX + 16, y: 0 }),
+            new Collider(Aabb.fromCenteredSize(32, 8)),
+            new Despawnable(),
+            new StaticSprite({
+                texture: this.textures.platform,
+                zIndex: 0
+            })
+        ]);
         this.farthestPlatformX += 32;
     }
 
@@ -158,28 +165,30 @@ export class WorldGenerationSystem {
         const { storage } = this;
 
         const amplifier = storage.createEntity();
-        storage.setComponent(amplifier, new Transform({ x, y }));
-        storage.setComponent(amplifier, new Collider(
-            Aabb.fromCenteredSize(44, 32),
-            ColliderType.Trigger,
-            CollisionLayer.Collectible
-        ));
-        storage.setComponent(amplifier, new Collectible(10));
-        storage.setComponent(amplifier, new StaticSprite({
-            texture: this.textures.amplifier,
-            zIndex: 1,
-            rect: Aabb.fromSize(0, 0, 44, 32)
-        }));
-        storage.setComponent(amplifier, new FrameAnimation({
-            animations: {
-                'rotate': {
-                    duration: Milliseconds.from(1000),
-                    frames: amplifierRotateFrames,
-                    mode: 'repeat'
-                }
-            },
-            currentAnimation: 'rotate'
-        }));
+        storage.setComponents(amplifier, [
+            new Transform({ x, y }),
+            new Collider(
+                Aabb.fromCenteredSize(44, 32),
+                ColliderType.Trigger,
+                CollisionLayer.Collectible
+            ),
+            new Collectible(10),
+            new StaticSprite({
+                texture: this.textures.amplifier,
+                zIndex: 1,
+                rect: Aabb.fromSize(0, 0, 44, 32)
+            }),
+            new FrameAnimation({
+                animations: {
+                    'rotate': {
+                        duration: Milliseconds.from(1000),
+                        frames: amplifierRotateFrames,
+                        mode: 'repeat'
+                    }
+                },
+                currentAnimation: 'rotate'
+            })
+        ]);
     }
 
     spawnBox(x: number, y: number) {
@@ -322,20 +331,16 @@ export class WorldGenerationSystem {
 
         const { storage } = this;
 
-        const characters = storage.getEntitiesWith(characterComponents);
-        const despawnables = storage.getEntitiesWith(despawnableComponents);
+        const characters = storage.getByAspect(characterAspect);
+        const despawnables = storage.getByAspect(despawnableAspect);
 
-        const despawnList = new Set<string>(despawnables);
+        //const despawnList = new Set<string>(despawnables.map(x => x.entity));
 
-        for (let character of characters) {
-            const [characterTransform, characterData] = storage.getComponents(character, characterComponents);
-
+        for (let { components: [characterTransform, ] } of characters) {
             // Despawning
-            for (let despawnable of despawnables) {
-                const [despawnableTransform, despawnableData] = storage.getComponents(despawnable, despawnableComponents);
-
-                if (despawnableTransform.position.x >= characterTransform.position.x - DESPAWN_DISTANCE) {
-                    despawnList.delete(despawnable);
+            for (let { entity: despawnable, components: [despawnableTransform, ] } of despawnables) {
+                if (despawnableTransform.position.x <= characterTransform.position.x - DESPAWN_DISTANCE) {
+                    storage.removeEntity(despawnable);
                 }
             }
 
@@ -365,7 +370,5 @@ export class WorldGenerationSystem {
                 this.spawnChallenge();
             }
         }
-
-        despawnList.forEach(this.removeEntity);
     }
 }

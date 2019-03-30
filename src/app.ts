@@ -88,7 +88,7 @@ async function main() {
     const worldGenerationSystem = new WorldGenerationSystem(storage);
     const scoringSystem = new ScoringSystem(storage);
     const damageSystem = new DamageSystem(storage);
-    const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
+    // const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
     const speedSystem = new SpeedSystem(storage);
 
     await worldGenerationSystem.waitForInitialization();
@@ -99,6 +99,7 @@ async function main() {
     const loop = new GameLoop({
         timestep: Milliseconds.from(1000 / 30),
         onFixedUpdate: dt => {
+            jumpingSystem.run(dt);
             physicsSystem.run(dt);
             collisionSystem.run(dt);
             cameraSystem.run(dt);
@@ -106,10 +107,9 @@ async function main() {
         onVariableUpdate: (dt, alpha) => {
             // if (Math.random() < 0.01) console.log(dt);
 
-            jumpingSystem.run(dt);
             animationSystem.run(dt);
             renderingSystem.run(dt, alpha);
-            debugRenderingSystem.run(dt, alpha);
+            // debugRenderingSystem.run(dt, alpha);
             scoringSystem.run(dt);
             damageSystem.run(dt);
             speedSystem.run(dt);
@@ -118,6 +118,8 @@ async function main() {
             if (rareUpdateCounter % 3 === 0) {
                 worldGenerationSystem.run(dt);
             }
+
+            storage.handleRemovals();
         }
     });
 

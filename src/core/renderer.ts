@@ -107,8 +107,8 @@ export class Renderer {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'black';
         this.context.font = '24px Tahoma';
-        this.context.fillText(text, x, y);
         this.context.strokeText(text, x, y);
+        this.context.fillText(text, x, y);
     }
 
     public drawTextWithOpacity(x: number, y: number, text: string, opacity: number) {
@@ -116,6 +116,7 @@ export class Renderer {
         this.context.strokeStyle = 'black';
         this.context.font = '24px Tahoma';
         this.context.globalAlpha = opacity;
+        this.context.strokeText(text, x, y);
         this.context.fillText(text, x, y);
         this.context.globalAlpha = 1;
     }
