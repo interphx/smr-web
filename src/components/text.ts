@@ -1,5 +1,5 @@
 export class Text {
-    public static readonly componentName: 'Text';
+    public static componentName = 'Text';
 
     public text: string;
     public size: number;

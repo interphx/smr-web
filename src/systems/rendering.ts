@@ -5,7 +5,6 @@ import { Renderer } from 'core/renderer';
 import { Milliseconds } from 'types/milliseconds';
 import { EntityStorage } from 'core/entity-storage';
 import { Vec2 } from 'types/vec2';
-import { lerp } from 'utils/math';
 import { Character } from 'components/character';
 import { Aabb } from 'types/aabb';
 import { loadImage } from 'utils/ajax';
@@ -17,14 +16,6 @@ const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
 const cameraAspect = aspect.all(Transform, Camera);
 const characterAspect = aspect.all(Character);
-/*
-const spriteComponents: [typeof Transform, typeof StaticSprite] = [Transform, StaticSprite];
-
-const textComponents: [typeof Transform, typeof Text] = [Transform, Text];
-
-const cameraComponents: [typeof Transform, typeof Camera] = [Transform, Camera];
-
-const characterComponents: [typeof Character] = [Character];*/
 
 const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);

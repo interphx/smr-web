@@ -31,6 +31,9 @@ class TrackingTable {
     ) {
         this.componentTypes = componentTypes;
         this.entries = entries;
+        for (let i = 0; i < this.entries.length; ++i) {
+            this.entityIndices[this.entries[i].entity] = i;
+        }
     }
 
     public getComponentTypes() {

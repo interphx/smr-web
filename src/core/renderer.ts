@@ -26,10 +26,8 @@ export class Renderer {
         this.canvas.height = this.resolution.y * scale.y * pixelRatio;
         this.canvas.style.display = 'block';
         this.canvas.style.margin = '0 auto';
-        this.canvas.style.width = `${this.resolution.x * scale.x}`;
-        this.canvas.style.height = `${this.resolution.y * scale.y}`;
-        this.canvas.style.maxWidth = `100vw`;
-        this.canvas.style.maxHeight = `100vh`;
+        this.canvas.style.width = `${this.resolution.x * scale.x}px`;
+        this.canvas.style.height = `${this.resolution.y * scale.y}px`;
 
         window.document.body.style.backgroundColor = this.backgroundColor;
 

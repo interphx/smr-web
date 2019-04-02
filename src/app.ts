@@ -37,7 +37,7 @@ const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
 function getScreenSize(targetSize: Vec2) {
     const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
+    const windowHeight = Math.min(window.innerHeight, window.document.documentElement.clientHeight);
 
     const targetAspectRatio = targetSize.x / targetSize.y;
     const screenAspectRatio = windowWidth / windowHeight;
@@ -105,8 +105,6 @@ async function main() {
             cameraSystem.run(dt);
         },
         onVariableUpdate: (dt, alpha) => {
-            // if (Math.random() < 0.01) console.log(dt);
-
             animationSystem.run(dt);
             renderingSystem.run(dt, alpha);
             // debugRenderingSystem.run(dt, alpha);
@@ -115,7 +113,7 @@ async function main() {
             speedSystem.run(dt);
 
             rareUpdateCounter += 1;
-            if (rareUpdateCounter % 3 === 0) {
+            if ((rareUpdateCounter < 5) || (rareUpdateCounter % 20 === 0)) {
                 worldGenerationSystem.run(dt);
             }
 
@@ -124,6 +122,7 @@ async function main() {
     });
 
     (window as any).loop = loop;
+    (window as any).entityStorage = storage;
 
     const character = storage.createEntity();
     storage.setComponent(character, new Character());
@@ -178,6 +177,11 @@ async function main() {
                 currentAnimation: 'run'
             }));
         });
+
+        document.body.appendChild(renderer.getCanvas());
+
+    document.addEventListener('scroll', event => event.preventDefault());
+    document.addEventListener('touchmove', event => event.preventDefault()); 
 
     document.body.appendChild(renderer.getCanvas());
 
