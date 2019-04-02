@@ -21,10 +21,24 @@ const despawnableAspect = all(Transform, Despawnable);
 const SPAWN_DISTANCE = 1000;
 const DESPAWN_DISTANCE = 1000;
 const BG_MOVEMENT_SPEED = 0.1;
+
 const amplifierRotateFrames = FrameAnimation.generateSpritesheetFrames(
     Vec2.fromCartesian(44, 32),
     Vec2.fromCartesian(352, 32)
 );
+const amplifierColliderAabb = Aabb.fromCenteredSize(44, 32);
+const amplifierSpriteAabb = Aabb.fromSize(0, 0, 44, 32);
+const amplifierSpriteSize = Vec2.fromCartesian(44, 32);
+
+const boxColliderAabb = Aabb.fromCenteredSize(56, 56);
+const boxSpriteAabb = Aabb.fromSize(0, 0, 56, 56);
+const boxSpriteSize = Vec2.fromCartesian(56, 56);
+
+const platformColliderAabb = Aabb.fromCenteredSize(32, 8);
+const platformSpriteAabb = Aabb.fromSize(0, 0, 32, 8);
+const platformSpriteSize = Vec2.fromCartesian(32, 8);
+
+const backgroundBuildingBodyVelocity = Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0);
 
 const gap = 600;
 const boxHalf = 28;
@@ -134,7 +148,7 @@ export class WorldGenerationSystem {
                 targetSize: buildingSize
             }),
             new Body({
-                velocity: Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0),
+                velocity: backgroundBuildingBodyVelocity,
                 isAffectedByGravity: false
             })
         ]);
@@ -149,11 +163,13 @@ export class WorldGenerationSystem {
         const platform = storage.createEntity();
         storage.setComponents(platform, [
             new Transform({ x: this.farthestPlatformX + 16, y: 0 }),
-            new Collider(Aabb.fromCenteredSize(32, 8)),
+            new Collider(platformColliderAabb),
             new Despawnable(),
             new StaticSprite({
                 texture: this.textures.platform,
-                zIndex: 0
+                zIndex: 0,
+                rect: platformSpriteAabb,
+                targetSize: platformSpriteSize
             })
         ]);
         this.farthestPlatformX += 32;
@@ -168,7 +184,7 @@ export class WorldGenerationSystem {
         storage.setComponents(amplifier, [
             new Transform({ x, y }),
             new Collider(
-                Aabb.fromCenteredSize(44, 32),
+                amplifierColliderAabb,
                 ColliderType.Trigger,
                 CollisionLayer.Collectible
             ),
@@ -176,7 +192,8 @@ export class WorldGenerationSystem {
             new StaticSprite({
                 texture: this.textures.amplifier,
                 zIndex: 1,
-                rect: Aabb.fromSize(0, 0, 44, 32)
+                rect: amplifierSpriteAabb,
+                targetSize: amplifierSpriteSize
             }),
             new FrameAnimation({
                 animations: {
@@ -197,18 +214,21 @@ export class WorldGenerationSystem {
         const { storage } = this;
 
         const box = storage.createEntity();
-        storage.setComponent(box, new Transform({ x, y }));
-        storage.setComponent(box, new Collider(
-            Aabb.fromCenteredSize(56, 56),
-            ColliderType.Kinematic,
-            CollisionLayer.Obstacle,
-            CollisionLayer.Character
-        ));
-        storage.setComponent(box, new StaticSprite({
-            texture: this.textures.box,
-            zIndex: 1,
-            rect: Aabb.fromSize(0, 0, 56, 56)
-        }));
+        storage.setComponents(box, [
+            new Transform({ x, y }),
+            new Collider(
+                boxColliderAabb,
+                ColliderType.Kinematic,
+                CollisionLayer.Obstacle,
+                CollisionLayer.Character
+            ),
+            new StaticSprite({
+                texture: this.textures.box,
+                zIndex: 1,
+                rect: boxSpriteAabb,
+                targetSize: boxSpriteSize
+            })
+        ]);
     }
 
     spawnChallenge() {

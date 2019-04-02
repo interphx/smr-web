@@ -41,9 +41,4 @@ export class Transform {
     public getInterpolatedY(alpha: number) {
         return lerp(this.lastPosition.y, this.position.y, alpha);
     }
-
-    public sync(alpha: number) {
-        this.lastPosition.x = lerp(this.lastPosition.x, this.position.x, alpha);
-        this.lastPosition.y = lerp(this.lastPosition.y, this.position.y, alpha);
-    }
 }
