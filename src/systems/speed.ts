@@ -14,7 +14,7 @@ export class SpeedSystem {
     run(dt: Milliseconds) {
         const characters = this.storage.getByAspect(characterAspect);
 
-        for (let { entity: character, components: [body, animation] } of characters) {
+        for (let { components: [body, animation] } of characters) {
             body.velocity.x += 0.0000001 / Math.max(0.001, body.velocity.x) * dt;
 
             animation.setSpeed(1 + body.velocity.x * 2);

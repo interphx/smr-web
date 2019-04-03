@@ -33,11 +33,6 @@ export const { requestFrame, cancelFrame } = ((): {
             clearTimeout(frameId);
         }
     };
-
-    /*return {
-        requestFrame: (callback: (timestamp: number) => void) => setTimeout(callback, 0),
-        cancelFrame: (timeoutId: number) => clearTimeout(timeoutId)
-    };*/
 })();
 
 export function delay(time: Milliseconds) {

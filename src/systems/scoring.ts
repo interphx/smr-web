@@ -25,7 +25,7 @@ export class ScoringSystem {
 
         const characters = storage.getByAspect(characterAspect);
 
-        for (let { entity: character, components: [collider, body, data] } of characters) {
+        for (let { components: [collider, body, data] } of characters) {
             if (!data.isAlive()) continue;
             
             data.addScore(dt * 0.01 * Math.max(0, body.velocity.x));

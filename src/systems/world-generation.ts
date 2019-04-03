@@ -14,6 +14,7 @@ import { FrameAnimation } from 'components/frame-animation';
 import { Milliseconds } from 'types/milliseconds';
 import { Body } from 'components/body';
 import { all } from 'core/aspect';
+import { hasProperty } from 'utils/object';
 
 const characterAspect = all(Transform, Character);
 const despawnableAspect = all(Transform, Despawnable);
@@ -46,53 +47,130 @@ const boxFull = 56;
 const ampFull = 44;
 
 class EntityPool {
-    private free: string[] = [];
-    private used: string[] = [];
+    private entityIndices: {[key: string]: number} = Object.create(null);
+    private entities: string[] = [];
+    private firstUnusedIndex: number = 0;
 
-    private checkInvariants() {
-        /*if (this.free.some(x => this.used.some(y => x === y))) {
-            throw new Error(`The same entity is in free and used lists`);
-        }*/
+    /*private checkInvariants() {
+        for (let entity in this.entityIndices) {
+            if (this.entities[this.entityIndices[entity]] !== entity) {
+                throw new Error(`Entity cached index mismatch for ${entity} (cached ${this.entityIndices[entity]}, actual ${this.entities.indexOf(entity)})`);
+            }
+        }
+        for (let entity of this.entities) {
+            let count = 0;
+            for (let other of this.entities) {
+                if (other === entity) count += 1;
+            }
+            if (count !== 1) {
+                throw new Error(`Invalid entity count: expected 1, got ${count}`);
+            }
+        }
+        for (let entity of this.entities) {
+            if (!this.has(entity)) throw new Error(`Entity is enlisted but not "had"`);
+        }
+    }*/
+
+    private has(entity: string) {
+        return hasProperty(this.entityIndices, entity);
+    }
+
+    private isUsed(entity: string) {
+        return this.entityIndices[entity] < this.firstUnusedIndex;
+    }
+
+    private isFree(entity: string) {
+        return this.entityIndices[entity] >= this.firstUnusedIndex;
+    }
+
+    private swap(indexA: number, indexB: number) {
+        //this.checkInvariants();
+
+        const a = this.entities[indexA];
+        const b = this.entities[indexB];
+
+        this.entities[indexA] = b;
+        this.entities[indexB] = a;
+
+        this.entityIndices[a] = indexB;
+        this.entityIndices[b] = indexA;
+
+        //this.checkInvariants();
+    }
+
+    private addNewUsed(entity: string) {
+        //this.checkInvariants();
+
+        this.entityIndices[entity] = this.entities.push(entity) - 1;
+        this.swap(this.entities.length - 1, this.firstUnusedIndex);
+        this.firstUnusedIndex += 1;
+
+        if (!this.has(entity)) throw new Error(`Entity is added but not "had"`);
+
+        //this.checkInvariants();
+    }
+
+    private makeUsed(entity: string) {
+        //this.checkInvariants();
+
+        if (!this.has(entity) || !this.isFree(entity)) throw new Error(`makeUsed invalid arg`);
+
+        this.swap(this.entityIndices[entity], this.firstUnusedIndex);
+        this.firstUnusedIndex += 1;
+
+        //this.checkInvariants();
+    }
+
+    private makeUnused(entity: string) {
+        //this.checkInvariants();
+
+        if (!this.has(entity) || !this.isUsed(entity)) throw new Error(`makeUnused invalid arg`);
+
+        this.swap(this.entityIndices[entity], this.firstUnusedIndex - 1);
+        this.firstUnusedIndex -= 1;
+
+        //this.checkInvariants();
     }
 
     addUsedEntity(entity: string) {
-        this.checkInvariants();
-        //if (this.used.indexOf(entity) >= 0) throw new Error(`Attempt to add a used entity twice`);
-        //if (this.free.indexOf(entity) >= 0) throw new Error(`Attempt to add a used entity which is already in free list`);
-        this.used.push(entity);
+        //this.checkInvariants();
+
+        this.addNewUsed(entity);
+
+        //this.checkInvariants();
     }
 
     getEntity() {
-        this.checkInvariants();
-        if (this.free.length > 0) {
-            const result = this.free.pop()!;
-            this.addUsedEntity(result);
+        //this.checkInvariants();
+
+        if (this.firstUnusedIndex < this.entities.length) {
+            const result = this.entities[this.firstUnusedIndex];
+            this.makeUsed(result);
             return result;
         }
         return null;
     }
 
     freeEntity(entity: string) {
-        this.checkInvariants();
-        //if (this.used.indexOf(entity) < 0) throw new Error(`Attempt to free an entity not from used list`);
-        //if (this.free.indexOf(entity) >= 0) throw new Error(`Attempt to free an entity which is already in free list`);
+       // this.checkInvariants();
 
-        const index = this.used.indexOf(entity);
-        this.used[index] = this.used[this.used.length - 1];
-        this.used.length -= 1;
+        this.makeUnused(entity);
 
-        this.free.push(entity);
+        //this.checkInvariants();
     }
 
     tryFreeEntity(entity: string) {
-        this.checkInvariants();
-        if (this.used.indexOf(entity) >= 0 && this.free.indexOf(entity) < 0) {
+        //this.checkInvariants();
+
+        if (this.isUsed(entity)) {
             this.freeEntity(entity);
         }
+
+        //this.checkInvariants();
     }
 
     hasEntity(entity: string) {
-        return (this.used.indexOf(entity) >= 0) || (this.free.indexOf(entity) >= 0);
+        return this.has(entity);
     }
 }
 

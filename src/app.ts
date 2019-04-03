@@ -37,7 +37,7 @@ const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
 function getScreenSize(targetSize: Vec2) {
     const windowWidth = window.innerWidth;
-    const windowHeight = Math.min(window.innerHeight, window.document.documentElement.clientHeight);
+    const windowHeight = window.innerHeight;
 
     const targetAspectRatio = targetSize.x / targetSize.y;
     const screenAspectRatio = windowWidth / windowHeight;
@@ -126,32 +126,23 @@ async function main() {
     (window as any).entityStorage = storage;
 
     const character = storage.createEntity();
-    storage.setComponent(character, new Character(3));
-    storage.setComponent(character, new Transform({ x: 0, y: -128 }));
-    storage.setComponent(character, new Body({ velocity: Vec2.fromCartesian(0.2, 0), isAffectedByGravity: true }));
-    storage.setComponent(character, new Collider(
-        Aabb.fromSize(-34, -62, 68, 124),
-        ColliderType.Kinematic,
-        CollisionLayer.Character,
-        CollisionLayer.World | CollisionLayer.Obstacle | CollisionLayer.Collectible
-    ));
-    storage.setComponent(character, new Jump({
-        speed: 0.6,
-        maxTime: Milliseconds.from(400)
-    }));
-
-    const camera = storage.createEntity();
-    storage.setComponent(camera, new Camera(character, Vec2.clone(INITIAL_SCREEN_SIZE)));
-    storage.setComponent(camera, new Transform({ x: 0, y: 0 }));
-
+    storage.setComponents(character, [
+        new Character(3),
+        new Transform({ x: 0, y: -128 }),
+        new Body({ velocity: Vec2.fromCartesian(0.2, 0), isAffectedByGravity: true }),
+        new Collider(
+            Aabb.fromSize(-34, -62, 68, 124),
+            ColliderType.Kinematic,
+            CollisionLayer.Character,
+            CollisionLayer.World | CollisionLayer.Obstacle | CollisionLayer.Collectible
+        ),
+        new Jump({
+            speed: 0.6,
+            maxTime: Milliseconds.from(400)
+        })
+    ]);
     await loadImage('assets/images/character.png')
         .then(texture => {
-            storage.setComponent(character, new StaticSprite({
-                texture,
-                zIndex: 1,
-                rect: Aabb.fromSize(0, 0, 128, 128)
-            }));
-
             const runFrames = FrameAnimation.generateSpritesheetFrames(
                 Vec2.fromCartesian(128, 128),
                 Vec2.fromCartesian(texture.width, texture.height)
@@ -162,25 +153,35 @@ async function main() {
                 Vec2.fromCartesian(texture.width, texture.height)
             ).slice(7, 9);
 
-            storage.setComponent(character, new FrameAnimation({
-                animations: {
-                    'run': {
-                        duration: Milliseconds.from(900),
-                        frames: runFrames,
-                        mode: 'repeat'
+            storage.setComponents(character, [
+                new StaticSprite({
+                    texture,
+                    zIndex: 1,
+                    rect: Aabb.fromSize(0, 0, 128, 128)
+                }),
+                new FrameAnimation({
+                    animations: {
+                        'run': {
+                            duration: Milliseconds.from(900),
+                            frames: runFrames,
+                            mode: 'repeat'
+                        },
+                        'jump': {
+                            duration: Milliseconds.from(600),
+                            frames: jumpFrames,
+                            mode: 'repeat'
+                        }
                     },
-                    'jump': {
-                        duration: Milliseconds.from(600),
-                        frames: jumpFrames,
-                        mode: 'repeat'
-                    }
-                },
-                currentAnimation: 'run'
-            }));
+                    currentAnimation: 'run'
+                })
+            ]);
         });
-    
 
-    document.body.appendChild(renderer.getCanvas());
+    const camera = storage.createEntity();
+    storage.setComponents(camera, [
+        new Camera(character, Vec2.clone(INITIAL_SCREEN_SIZE)),
+        new Transform({ x: 0, y: 0 })
+    ]);
 
     document.addEventListener('scroll', event => event.preventDefault());
     document.addEventListener('touchmove', event => event.preventDefault()); 
@@ -203,11 +204,4 @@ async function main() {
 
 waitForDocumentLoad()
     .then(() => delay(Milliseconds.from(1000)))
-    .then(() => {
-        if (typeof Math.sign !== 'function') {
-            Math.sign = function(n: number) {
-                return (n > 0) ? 1 : (n < 0) ? -1 : 0;
-            }
-        }
-    })
     .then(main);

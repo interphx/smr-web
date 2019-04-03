@@ -89,7 +89,7 @@ export class CollisionSystem {
 
                     if (obstacleCollider.type === ColliderType.Trigger) continue;
 
-                    if (overlap.y <= overlap.x) {
+                    if (overlap.y <= overlap.x * 1.5) {
                         // const oldY = bodyTransform.position.y;
                         const moveToBottom = bodyTransform.position.y - obstacleTransform.position.y > 0;
                         if (!moveToBottom) {
