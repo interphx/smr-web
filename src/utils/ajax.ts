@@ -18,7 +18,7 @@ export function loadImage(src: string) {
                     tmp[1] = g;
                     tmp[2] = b;
                     return tmp;
-                }
+                };
 
         image.onload = () => {
             const canvas = document.createElement('canvas');
@@ -41,7 +41,9 @@ export function loadImage(src: string) {
             context.putImageData(imageData, 0, 0);
             resolve(canvas);
         };
-        image.onerror = err => reject(err);
+        image.onerror = err => {
+            reject(err);
+        };
 
         image.src = src;
     });

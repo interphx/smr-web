@@ -73,7 +73,8 @@ async function main() {
     const renderer = new Renderer({
         size           : Vec2.clone(INITIAL_SCREEN_SIZE),
         resolution     : TARGET_SIZE,
-        backgroundColor: 'black'
+        backgroundColor: 'black',
+        enableSmoothing: false
     });
 
     const keyboard = new KeyboardInput();
@@ -113,7 +114,7 @@ async function main() {
             speedSystem.run(dt);
 
             rareUpdateCounter += 1;
-            if ((rareUpdateCounter < 5) || (rareUpdateCounter % 20 === 0)) {
+            if ((rareUpdateCounter < 5) || (rareUpdateCounter % 15 === 0)) {
                 worldGenerationSystem.run(dt);
             }
 
@@ -125,9 +126,9 @@ async function main() {
     (window as any).entityStorage = storage;
 
     const character = storage.createEntity();
-    storage.setComponent(character, new Character());
+    storage.setComponent(character, new Character(3));
     storage.setComponent(character, new Transform({ x: 0, y: -128 }));
-    storage.setComponent(character, new Body({ velocity: Vec2.fromCartesian(0.2, 0) }));
+    storage.setComponent(character, new Body({ velocity: Vec2.fromCartesian(0.2, 0), isAffectedByGravity: true }));
     storage.setComponent(character, new Collider(
         Aabb.fromSize(-34, -62, 68, 124),
         ColliderType.Kinematic,
@@ -177,8 +178,9 @@ async function main() {
                 currentAnimation: 'run'
             }));
         });
+    
 
-        document.body.appendChild(renderer.getCanvas());
+    document.body.appendChild(renderer.getCanvas());
 
     document.addEventListener('scroll', event => event.preventDefault());
     document.addEventListener('touchmove', event => event.preventDefault()); 
@@ -191,14 +193,21 @@ async function main() {
             loop.stop();
         }
         if (event.key.toUpperCase() === 'S') {
-            loop.step();
+            loop.step(1000 / 60);
         }
         if (event.key.toUpperCase() === 'D') {
             loop.start();
         }
-    })
+    });
 }
 
 waitForDocumentLoad()
     .then(() => delay(Milliseconds.from(1000)))
+    .then(() => {
+        if (typeof Math.sign !== 'function') {
+            Math.sign = function(n: number) {
+                return (n > 0) ? 1 : (n < 0) ? -1 : 0;
+            }
+        }
+    })
     .then(main);

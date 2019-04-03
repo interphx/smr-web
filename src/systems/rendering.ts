@@ -21,6 +21,10 @@ const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
 const tmpHeartPos = Vec2.fromCartesian(0, 0);
 
+function compareSprites(a: {components:[unknown, {zIndex: number}]}, b: {components:[unknown, {zIndex: number}]}) {
+    return a.components[1].zIndex - b.components[1].zIndex;
+}
+
 export class RenderingSystem {
     private tmpPosition: Vec2 = { x: 0, y: 0 };
     private textures: {
@@ -60,18 +64,36 @@ export class RenderingSystem {
         const texts      = storage.getByAspect(textAspect);
         const characters = storage.getByAspect(characterAspect);
 
-        sprites.sort((a, b) => {
-            return a.components[1].zIndex - b.components[1].zIndex;
-        })
+        sprites.sort(compareSprites);
 
         for (let { components: [cameraTransform, cameraData] } of cameras) {
             const cameraPosX = cameraTransform.getInterpolatedX(alpha);
             const cameraPosY = cameraTransform.getInterpolatedY(alpha);
 
+            const cameraHalfWidth = cameraData.size.x / 2;
+            const cameraHalfHeight = cameraData.size.y / 2;
+
+            const cameraLeft = cameraTransform.position.x - cameraHalfWidth;
+            const cameraTop = cameraTransform.position.y - cameraHalfHeight;
+            const cameraRight = cameraTransform.position.x + cameraHalfWidth;
+            const cameraBottom = cameraTransform.position.y + cameraHalfHeight;
+
             for (let { components: [transform, sprite] } of sprites) {
+                const spriteHalfWidth = sprite.targetSize.x / 2;
+                const spriteHalfHeight = sprite.targetSize.y / 2;
+
                 const pos = this.tmpPosition;
-                pos.x = transform.getInterpolatedX(alpha) - (sprite.targetSize.x / 2) - cameraPosX;
-                pos.y = transform.getInterpolatedY(alpha) - (sprite.targetSize.y / 2) - cameraPosY;
+                pos.x = transform.getInterpolatedX(alpha) - spriteHalfWidth - cameraPosX;
+                pos.y = transform.getInterpolatedY(alpha) - spriteHalfHeight - cameraPosY;
+
+                const left = transform.position.x - spriteHalfWidth;
+                const top = transform.position.y - spriteHalfHeight;
+                const right = transform.position.x + spriteHalfWidth;
+                const bottom = transform.position.y + spriteHalfHeight;
+
+                if (left > cameraRight || top > cameraBottom || right < cameraLeft || bottom < cameraTop) {
+                    continue;
+                }
 
                 if (sprite.isGhost && Math.random() < 0.5) continue;
                 renderer.drawImageRect(pos, sprite.sourceRect, sprite.targetSize, sprite.texture);

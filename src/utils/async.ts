@@ -1,7 +1,8 @@
 import { Milliseconds } from 'types/milliseconds';
+import { getTime } from './time';
 
 export const { requestFrame, cancelFrame } = ((): {
-    requestFrame: (callback: Function) => number,
+    requestFrame: (callback: (timestamp: number) => void) => number,
     cancelFrame: (id: number) => void
 } => {
     const global = window as any;
@@ -23,9 +24,20 @@ export const { requestFrame, cancelFrame } = ((): {
     }
 
     return {
-        requestFrame: (callback: Function) => setTimeout(callback, 0),
-        cancelFrame: (timeoutId: number) => clearTimeout(timeoutId)
+        requestFrame: function(callback: (timestamp: number) => void) {
+            return setTimeout(function() {
+                callback(getTime());
+            }, 10) as any as number;
+        },
+        cancelFrame: function(frameId: number) {
+            clearTimeout(frameId);
+        }
     };
+
+    /*return {
+        requestFrame: (callback: (timestamp: number) => void) => setTimeout(callback, 0),
+        cancelFrame: (timeoutId: number) => clearTimeout(timeoutId)
+    };*/
 })();
 
 export function delay(time: Milliseconds) {

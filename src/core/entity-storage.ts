@@ -36,6 +36,13 @@ class TrackingTable {
         }
     }
 
+    public getEntityData(entity: string) {
+        if (!hasProperty(this.entityIndices, entity)) {
+            return null;
+        }
+        return this.entries[this.entityIndices[entity]];
+    }
+
     public getComponentTypes() {
         return this.componentTypes;
     }
@@ -65,7 +72,7 @@ class TrackingTable {
 }
 
 export class EntityStorage {
-    private lastEntityId: number = Number.MIN_SAFE_INTEGER;
+    private lastEntityId: number = 0;
     private storages: {[componentName: string]: ComponentStorage<any>} = Object.create(null);
     private entities: {[entityId: string]: boolean | undefined} = Object.create(null);
     private tracked: {[aspectHash: string]: TrackingTable} = Object.create(null);
@@ -77,7 +84,7 @@ export class EntityStorage {
 
     public createEntity() {
         this.lastEntityId += 1;
-        const entityId = `ent${this.lastEntityId}`;
+        const entityId = `${this.lastEntityId}`;
         this.entities[entityId] = true;
         return entityId;
     }
@@ -118,6 +125,13 @@ export class EntityStorage {
             this.tracked[aspect.hash] = new TrackingTable(aspect.includedComponents, this.findByAspect(aspect));
         }
         return this.tracked[aspect.hash].getEntries() as ReadonlyArray<TrackedEntity<any>>;
+    }
+
+    public getAspect<T extends { hash: string, includedComponents: ComponentClass[]}>(entity: string, aspect: T): TrackedEntity<InstanceTypes<T['includedComponents']>> | null {
+        if (!this.tracked[aspect.hash]) {
+            return null;
+        }
+        return this.tracked[aspect.hash].getEntityData(entity) as TrackedEntity<InstanceTypes<any>>;
     }
 
     private removeEntityImmediately(entityId: string) {

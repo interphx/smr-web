@@ -21,21 +21,32 @@ export class CollisionSystem {
     constructor(
         private storage: EntityStorage
     ) {
-
+        this.compare = this.compare.bind(this);
     }
 
-    sortByDistance(origin: Vec2, entities: { entity: string }[]) {
-        entities.sort((a, b) => {
-            const transformA = this.storage.getComponent(a.entity, Transform);
-            const transformB = this.storage.getComponent(b.entity, Transform);
+    private tmpOrigin: Vec2 = Vec2.fromCartesian(0, 0);
+    private compare(a: {entity: string, components: [Transform, Collider]}, b: {entity: string, components: [Transform, Collider]}) {
+        const origin = this.tmpOrigin;
+        const transformA = a.components[0];
+        const transformB = b.components[0];
 
-            const distanceA = Math.abs(transformA.position.x - origin.x) +
-                              Math.abs(transformA.position.y - origin.y);
-            const distanceB = Math.abs(transformB.position.x - origin.x) +
-                              Math.abs(transformB.position.y - origin.y);
+        const abs = Math.abs;
+        const posA = transformA.position;
+        const posB = transformB.position;
+        const ox = origin.x;
+        const oy = origin.y;
 
-            return distanceA - distanceB;
-        });
+        const distanceA = abs(posA.x - ox) +
+                          abs(posA.y - oy);
+        const distanceB = abs(posB.x - ox) +
+                          abs(posB.y - oy);
+
+        return distanceA - distanceB;
+    }
+
+    sortByDistance(origin: Vec2, entities: { entity: string, components: [Transform, Collider] }[]) {
+        this.tmpOrigin = origin;
+        entities.sort(this.compare);
     }
 
     public run(dt: number) {

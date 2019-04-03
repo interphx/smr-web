@@ -18,8 +18,8 @@ import { all } from 'core/aspect';
 const characterAspect = all(Transform, Character);
 const despawnableAspect = all(Transform, Despawnable);
 
-const SPAWN_DISTANCE = 1000;
-const DESPAWN_DISTANCE = 1000;
+const SPAWN_DISTANCE = 1500;
+const DESPAWN_DISTANCE = 500;
 const BG_MOVEMENT_SPEED = 0.1;
 
 const amplifierRotateFrames = FrameAnimation.generateSpritesheetFrames(
@@ -34,9 +34,9 @@ const boxColliderAabb = Aabb.fromCenteredSize(56, 56);
 const boxSpriteAabb = Aabb.fromSize(0, 0, 56, 56);
 const boxSpriteSize = Vec2.fromCartesian(56, 56);
 
-const platformColliderAabb = Aabb.fromCenteredSize(32, 8);
+const platformColliderAabb = Aabb.fromCenteredSize(640, 8);
 const platformSpriteAabb = Aabb.fromSize(0, 0, 32, 8);
-const platformSpriteSize = Vec2.fromCartesian(32, 8);
+const platformSpriteSize = Vec2.fromCartesian(640, 8);
 
 const backgroundBuildingBodyVelocity = Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0);
 
@@ -44,6 +44,57 @@ const gap = 600;
 const boxHalf = 28;
 const boxFull = 56;
 const ampFull = 44;
+
+class EntityPool {
+    private free: string[] = [];
+    private used: string[] = [];
+
+    private checkInvariants() {
+        /*if (this.free.some(x => this.used.some(y => x === y))) {
+            throw new Error(`The same entity is in free and used lists`);
+        }*/
+    }
+
+    addUsedEntity(entity: string) {
+        this.checkInvariants();
+        //if (this.used.indexOf(entity) >= 0) throw new Error(`Attempt to add a used entity twice`);
+        //if (this.free.indexOf(entity) >= 0) throw new Error(`Attempt to add a used entity which is already in free list`);
+        this.used.push(entity);
+    }
+
+    getEntity() {
+        this.checkInvariants();
+        if (this.free.length > 0) {
+            const result = this.free.pop()!;
+            this.addUsedEntity(result);
+            return result;
+        }
+        return null;
+    }
+
+    freeEntity(entity: string) {
+        this.checkInvariants();
+        //if (this.used.indexOf(entity) < 0) throw new Error(`Attempt to free an entity not from used list`);
+        //if (this.free.indexOf(entity) >= 0) throw new Error(`Attempt to free an entity which is already in free list`);
+
+        const index = this.used.indexOf(entity);
+        this.used[index] = this.used[this.used.length - 1];
+        this.used.length -= 1;
+
+        this.free.push(entity);
+    }
+
+    tryFreeEntity(entity: string) {
+        this.checkInvariants();
+        if (this.used.indexOf(entity) >= 0 && this.free.indexOf(entity) < 0) {
+            this.freeEntity(entity);
+        }
+    }
+
+    hasEntity(entity: string) {
+        return (this.used.indexOf(entity) >= 0) || (this.free.indexOf(entity) >= 0);
+    }
+}
 
 export class WorldGenerationSystem {
     // Rightmost edges
@@ -95,6 +146,7 @@ export class WorldGenerationSystem {
         this.storage.removeEntity(entity);
     }
 
+    private foregroundBuildingPool = new EntityPool();
     spawnForegroundBuilding() {
         if (!this.textures) return;
 
@@ -102,25 +154,42 @@ export class WorldGenerationSystem {
 
         const texture = randomPick(this.textures.foregroundBuildings);
 
-        const buildingSize = Vec2.fromCartesian(
-            texture.width,
-            texture.height
-        );
+        const existingBuilding = this.foregroundBuildingPool.getEntity();
 
-        const building = storage.createEntity();
-        storage.setComponents(building, [
-            new Transform({
-                x: this.farthestForegroundX + buildingSize.x / 2,
-                y: -(buildingSize.y / 2)
-            }),
-            new Despawnable(),
-            new StaticSprite({
-                texture,
-                zIndex: -1,
-                targetSize: buildingSize
-            })
-        ]);
-        this.farthestForegroundX += buildingSize.x;
+        if (existingBuilding) {
+            const transform = storage.getComponent(existingBuilding, Transform);
+            const sprite = storage.getComponent(existingBuilding, StaticSprite);
+
+            transform.teleportTo(this.farthestForegroundX + texture.width / 2, -(texture.height) / 2);
+            sprite.texture = texture;
+            sprite.sourceRect.width = texture.width;
+            sprite.sourceRect.height = texture.height;
+            sprite.targetSize.x = texture.width;
+            sprite.targetSize.y = texture.height;
+        } else {
+
+            const buildingSize = Vec2.fromCartesian(
+                texture.width,
+                texture.height
+            );
+
+            const building = storage.createEntity();
+            this.foregroundBuildingPool.addUsedEntity(building);
+
+            storage.setComponents(building, [
+                new Transform({
+                    x: this.farthestForegroundX + buildingSize.x / 2,
+                    y: -(buildingSize.y / 2)
+                }),
+                new Despawnable(),
+                new StaticSprite({
+                    texture,
+                    zIndex: -1,
+                    targetSize: buildingSize
+                })
+            ]);
+        }
+        this.farthestForegroundX += texture.width;
     }
 
     spawnBackgroundBuilding() {
@@ -155,96 +224,130 @@ export class WorldGenerationSystem {
         this.farthestBackgroundX += buildingSize.x;
     }
 
+    private platformPool = new EntityPool();
     spawnPlatform() {
         if (!this.textures) return;
 
         const { storage } = this;
 
-        const platform = storage.createEntity();
-        storage.setComponents(platform, [
-            new Transform({ x: this.farthestPlatformX + 16, y: 0 }),
-            new Collider(platformColliderAabb),
-            new Despawnable(),
-            new StaticSprite({
-                texture: this.textures.platform,
-                zIndex: 0,
-                rect: platformSpriteAabb,
-                targetSize: platformSpriteSize
-            })
-        ]);
-        this.farthestPlatformX += 32;
+        const width = platformColliderAabb.width;
+        const halfWidth = width / 2;
+
+        const existingPlatform = this.platformPool.getEntity();
+
+        if (existingPlatform) {
+            const transform = storage.getComponent(existingPlatform, Transform);
+            transform.teleportTo(this.farthestPlatformX + halfWidth, 0);
+        } else {
+            const platform = storage.createEntity();
+            this.platformPool.addUsedEntity(platform);
+
+            storage.setComponents(platform, [
+                new Transform({ x: this.farthestPlatformX + halfWidth, y: 0 }),
+                new Collider(platformColliderAabb),
+                new Despawnable(),
+                new StaticSprite({
+                    texture: this.textures.platform,
+                    zIndex: 0,
+                    rect: platformSpriteAabb,
+                    targetSize: platformSpriteSize
+                })
+            ]);
+        }
+        this.farthestPlatformX += width;
     }
 
+    private amplifierPool = new EntityPool();
     spawnAmplifier(x: number, y: number) {
         if (!this.textures) return;
 
         const { storage } = this;
 
-        const amplifier = storage.createEntity();
-        storage.setComponents(amplifier, [
-            new Transform({ x, y }),
-            new Collider(
-                amplifierColliderAabb,
-                ColliderType.Trigger,
-                CollisionLayer.Collectible
-            ),
-            new Collectible(10),
-            new StaticSprite({
-                texture: this.textures.amplifier,
-                zIndex: 1,
-                rect: amplifierSpriteAabb,
-                targetSize: amplifierSpriteSize
-            }),
-            new FrameAnimation({
-                animations: {
-                    'rotate': {
-                        duration: Milliseconds.from(1000),
-                        frames: amplifierRotateFrames,
-                        mode: 'repeat'
-                    }
-                },
-                currentAnimation: 'rotate'
-            })
-        ]);
+        const existingAmplifier = this.amplifierPool.getEntity();
+
+        if (existingAmplifier) {
+            const transform = storage.getComponent(existingAmplifier, Transform);
+            transform.teleportTo(x, y);
+        } else {
+            const amplifier = storage.createEntity();
+            this.amplifierPool.addUsedEntity(amplifier);
+
+            storage.setComponents(amplifier, [
+                new Transform({ x, y }),
+                new Collider(
+                    amplifierColliderAabb,
+                    ColliderType.Trigger,
+                    CollisionLayer.Collectible
+                ),
+                new Collectible(10),
+                new StaticSprite({
+                    texture: this.textures.amplifier,
+                    zIndex: 1,
+                    rect: amplifierSpriteAabb,
+                    targetSize: amplifierSpriteSize
+                }),
+                new FrameAnimation({
+                    animations: {
+                        'rotate': {
+                            duration: Milliseconds.from(1000),
+                            frames: amplifierRotateFrames,
+                            mode: 'repeat'
+                        }
+                    },
+                    currentAnimation: 'rotate'
+                })
+            ]);
+        }
     }
 
+    private boxPool = new EntityPool();
     spawnBox(x: number, y: number) {
         if (!this.textures) return;
 
         const { storage } = this;
 
-        const box = storage.createEntity();
-        storage.setComponents(box, [
-            new Transform({ x, y }),
-            new Collider(
-                boxColliderAabb,
-                ColliderType.Kinematic,
-                CollisionLayer.Obstacle,
-                CollisionLayer.Character
-            ),
-            new StaticSprite({
-                texture: this.textures.box,
-                zIndex: 1,
-                rect: boxSpriteAabb,
-                targetSize: boxSpriteSize
-            })
-        ]);
+        const existingBox = this.boxPool.getEntity();
+
+        if (existingBox) {
+            const transform = storage.getComponent(existingBox, Transform);
+            transform.teleportTo(x, y);
+        } else {
+            const box = storage.createEntity();
+            this.boxPool.addUsedEntity(box);
+
+            storage.setComponents(box, [
+                new Transform({ x, y }),
+                new Collider(
+                    boxColliderAabb,
+                    ColliderType.Kinematic,
+                    CollisionLayer.Obstacle,
+                    CollisionLayer.Character
+                ),
+                new StaticSprite({
+                    texture: this.textures.box,
+                    zIndex: 1,
+                    rect: boxSpriteAabb,
+                    targetSize: boxSpriteSize
+                })
+            ]);
+        }
     }
+
+    patterns = [
+        this.patternA.bind(this),
+        this.patternB.bind(this),
+        this.patternC.bind(this),
+        this.patternD.bind(this),
+        this.patternE.bind(this),
+        this.patternF.bind(this),
+        this.patternG.bind(this),
+        this.patternH.bind(this)
+    ];
 
     spawnChallenge() {
         if (!this.textures) return;
         
-        var patterns = [
-            this.patternA.bind(this),
-            this.patternB.bind(this),
-            this.patternC.bind(this),
-            this.patternD.bind(this),
-            this.patternE.bind(this),
-            this.patternF.bind(this),
-            this.patternG.bind(this),
-            this.patternH.bind(this)
-        ];
-
+        var patterns = this.patterns;
         patterns[Math.floor(Math.random()*patterns.length)]();
                 
         this.farthestChallengeX += 44 + gap;
@@ -346,6 +449,20 @@ export class WorldGenerationSystem {
         this.spawnAmplifier(this.farthestChallengeX + gap + boxFull*7, -30 - boxFull);
     }
 
+    freeOrRemove(entity: string) {
+        if (this.platformPool.hasEntity(entity)) {
+            this.platformPool.tryFreeEntity(entity);
+        } else if (this.amplifierPool.hasEntity(entity)) {
+            this.amplifierPool.tryFreeEntity(entity);
+        } else if (this.boxPool.hasEntity(entity)) {
+            this.boxPool.tryFreeEntity(entity);
+        } else if (this.foregroundBuildingPool.hasEntity(entity)) {
+            this.foregroundBuildingPool.tryFreeEntity(entity);
+        } else {
+            this.storage.removeEntity(entity);
+        }
+    }
+
     run(dt: number) {
         if (!this.textures) return;
 
@@ -354,13 +471,11 @@ export class WorldGenerationSystem {
         const characters = storage.getByAspect(characterAspect);
         const despawnables = storage.getByAspect(despawnableAspect);
 
-        //const despawnList = new Set<string>(despawnables.map(x => x.entity));
-
         for (let { components: [characterTransform, ] } of characters) {
             // Despawning
             for (let { entity: despawnable, components: [despawnableTransform, ] } of despawnables) {
                 if (despawnableTransform.position.x <= characterTransform.position.x - DESPAWN_DISTANCE) {
-                    storage.removeEntity(despawnable);
+                    this.freeOrRemove(despawnable);
                 }
             }
 
@@ -368,27 +483,70 @@ export class WorldGenerationSystem {
             this.farthestBackgroundX += BG_MOVEMENT_SPEED * dt;
 
             // Spawning
+
+            const spawnFrontier = characterTransform.position.x + SPAWN_DISTANCE;
+            const spawnFrontierExtended = spawnFrontier + SPAWN_DISTANCE;
+
+            if (
+                this.farthestPlatformX < spawnFrontier &&
+                this.farthestForegroundX < spawnFrontier &&
+                this.farthestBackgroundX < spawnFrontier &&
+                this.farthestChallengeX < spawnFrontier
+            ) {
+                while (this.farthestPlatformX < spawnFrontierExtended) {
+                    this.spawnPlatform();
+                }
+
+                while (this.farthestForegroundX < spawnFrontierExtended) {
+                    this.spawnForegroundBuilding();
+                }
+                this.spawnForegroundBuilding();
+
+                while (this.farthestBackgroundX < spawnFrontierExtended) {
+                    this.spawnBackgroundBuilding();
+                }
+
+                while (this.farthestChallengeX < spawnFrontierExtended) {
+                    this.spawnChallenge();
+                }
+
+                /*for (let i = 0; i < 4; ++i) {
+                    this.spawnPlatform();
+                }
+                for (let i = 0; i < 9; ++i) {
+                    this.spawnForegroundBuilding();
+                }
+                for (let i = 0; i < 7; ++i) {
+                    this.spawnBackgroundBuilding();
+                }
+                for (let i = 0; i < 4; ++i) {
+                    this.spawnChallenge();
+                }*/
+            }
+            /*
             if (this.farthestPlatformX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 15; ++i) {
+                for (let i = 0; i < 3; ++i) {
                     this.spawnPlatform();
                 }
             }
 
             if (this.farthestForegroundX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 3; ++i) {
+                for (let i = 0; i < 6; ++i) {
                     this.spawnForegroundBuilding();
                 }
             }
 
             if (this.farthestBackgroundX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 3; ++i) {
+                for (let i = 0; i < 6; ++i) {
                     this.spawnBackgroundBuilding();
                 }
             }
 
             if (this.farthestChallengeX < characterTransform.position.x + SPAWN_DISTANCE) {
-                this.spawnChallenge();
-            }
+                for (let i = 0; i < 4; ++i) {
+                    this.spawnChallenge();
+                }
+            }*/
         }
     }
 }

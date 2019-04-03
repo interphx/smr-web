@@ -12,7 +12,8 @@ export class Renderer {
     constructor(options: {
         resolution: Vec2,
         size: Vec2,
-        backgroundColor: string
+        backgroundColor: string,
+        enableSmoothing: boolean
     }) {
         this.resolution = options.resolution;
         this.size = options.size;
@@ -26,8 +27,10 @@ export class Renderer {
         this.canvas.height = this.resolution.y * scale.y * pixelRatio;
         this.canvas.style.display = 'block';
         this.canvas.style.margin = '0 auto';
-        this.canvas.style.width = `${this.resolution.x * scale.x}px`;
-        this.canvas.style.height = `${this.resolution.y * scale.y}px`;
+        this.canvas.style.width = `${this.size.x}px`;
+        this.canvas.style.height = `${this.size.y}px`;
+        this.canvas.style.transform = `translateZ(0)`;
+        (this.canvas.style as any).webkitTransform = `translateZ(0)`;
 
         window.document.body.style.backgroundColor = this.backgroundColor;
 
@@ -38,8 +41,10 @@ export class Renderer {
         }
 
         this.context = context;
-        (this.context as any).mozImageSmoothingEnabled = true;
-        this.context.imageSmoothingEnabled = true;
+        (this.context as any).mozImageSmoothingEnabled = options.enableSmoothing;
+        (this.context as any).webkitImageSmoothingEnabled = options.enableSmoothing;
+        (this.context as any).msImageSmoothingEnabled = options.enableSmoothing;
+        this.context.imageSmoothingEnabled = options.enableSmoothing;
         this.context.scale(scale.x * pixelRatio, scale.y * pixelRatio);
         this.context.textAlign = 'center';
 

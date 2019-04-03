@@ -6,8 +6,9 @@ export class Character {
     public maxLives: number = 3;
     public remainingLives: number = 3;
 
-    constructor() {
-
+    constructor(lives: number) {
+        this.maxLives = lives;
+        this.remainingLives = lives;
     }
 
     addScore(amount: number) {
