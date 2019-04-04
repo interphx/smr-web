@@ -94,7 +94,12 @@ export class RenderingSystem {
                 const right = spriteX + spriteHalfWidth;
                 const bottom = spriteY + spriteHalfHeight;
 
-                if (left > cameraRight / sprite.parallaxDepth || top > cameraBottom || right < cameraLeft / sprite.parallaxDepth || bottom < cameraTop) {
+                if (
+                    left * sprite.parallaxDepth > cameraRight + cameraHalfWidth * sprite.parallaxDepth || 
+                    top > cameraBottom || 
+                    right * sprite.parallaxDepth < cameraLeft - cameraHalfWidth * sprite.parallaxDepth || 
+                    bottom < cameraTop
+                ) {
                     continue;
                 }
 

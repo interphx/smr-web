@@ -74,7 +74,7 @@ async function main() {
         size           : Vec2.clone(INITIAL_SCREEN_SIZE),
         resolution     : TARGET_SIZE,
         backgroundColor: 'black',
-        enableSmoothing: false
+        enableSmoothing: true
     });
 
     const keyboard = new KeyboardInput();
@@ -179,7 +179,7 @@ async function main() {
 
     const camera = storage.createEntity();
     storage.setComponents(camera, [
-        new Camera(character, Vec2.clone(INITIAL_SCREEN_SIZE)),
+        new Camera(character, Vec2.clone(TARGET_SIZE)),
         new Transform({ x: 0, y: 0 })
     ]);
 
