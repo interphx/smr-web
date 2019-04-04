@@ -52,6 +52,7 @@ export class RenderingSystem {
         this.textures = { heart };
     }
 
+    private lastFps: number = 60;
     run(dt: Milliseconds, alpha: number) {
         const { storage, renderer } = this;
 
@@ -131,5 +132,8 @@ export class RenderingSystem {
                 }
             }
         }
+
+        this.lastFps = this.lastFps * 0.9 + (1000 / dt) * 0.1;
+        renderer.drawText(0, -100, this.lastFps.toFixed(0));
     }
 }
