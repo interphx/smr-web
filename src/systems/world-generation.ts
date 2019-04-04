@@ -12,16 +12,14 @@ import { Image } from 'types/image';
 import { Collectible } from 'components/collectible';
 import { FrameAnimation } from 'components/frame-animation';
 import { Milliseconds } from 'types/milliseconds';
-import { Body } from 'components/body';
 import { all } from 'core/aspect';
 import { hasProperty } from 'utils/object';
 
 const characterAspect = all(Transform, Character);
-const despawnableAspect = all(Transform, Despawnable);
+const despawnableAspect = all(Transform, Despawnable, StaticSprite);
 
 const SPAWN_DISTANCE = 1500;
 const DESPAWN_DISTANCE = 500;
-const BG_MOVEMENT_SPEED = 0.1;
 
 const amplifierRotateFrames = FrameAnimation.generateSpritesheetFrames(
     Vec2.fromCartesian(44, 32),
@@ -38,8 +36,6 @@ const boxSpriteSize = Vec2.fromCartesian(56, 56);
 const platformColliderAabb = Aabb.fromCenteredSize(640, 8);
 const platformSpriteAabb = Aabb.fromSize(0, 0, 32, 8);
 const platformSpriteSize = Vec2.fromCartesian(640, 8);
-
-const backgroundBuildingBodyVelocity = Vec2.fromCartesian(BG_MOVEMENT_SPEED, 0);
 
 const gap = 600;
 const boxHalf = 28;
@@ -84,8 +80,6 @@ class EntityPool {
     }
 
     private swap(indexA: number, indexB: number) {
-        //this.checkInvariants();
-
         const a = this.entities[indexA];
         const b = this.entities[indexB];
 
@@ -94,55 +88,29 @@ class EntityPool {
 
         this.entityIndices[a] = indexB;
         this.entityIndices[b] = indexA;
-
-        //this.checkInvariants();
     }
 
     private addNewUsed(entity: string) {
-        //this.checkInvariants();
-
         this.entityIndices[entity] = this.entities.push(entity) - 1;
         this.swap(this.entities.length - 1, this.firstUnusedIndex);
         this.firstUnusedIndex += 1;
-
-        if (!this.has(entity)) throw new Error(`Entity is added but not "had"`);
-
-        //this.checkInvariants();
     }
 
     private makeUsed(entity: string) {
-        //this.checkInvariants();
-
-        if (!this.has(entity) || !this.isFree(entity)) throw new Error(`makeUsed invalid arg`);
-
         this.swap(this.entityIndices[entity], this.firstUnusedIndex);
         this.firstUnusedIndex += 1;
-
-        //this.checkInvariants();
     }
 
     private makeUnused(entity: string) {
-        //this.checkInvariants();
-
-        if (!this.has(entity) || !this.isUsed(entity)) throw new Error(`makeUnused invalid arg`);
-
         this.swap(this.entityIndices[entity], this.firstUnusedIndex - 1);
         this.firstUnusedIndex -= 1;
-
-        //this.checkInvariants();
     }
 
     addUsedEntity(entity: string) {
-        //this.checkInvariants();
-
         this.addNewUsed(entity);
-
-        //this.checkInvariants();
     }
 
     getEntity() {
-        //this.checkInvariants();
-
         if (this.firstUnusedIndex < this.entities.length) {
             const result = this.entities[this.firstUnusedIndex];
             this.makeUsed(result);
@@ -152,21 +120,13 @@ class EntityPool {
     }
 
     freeEntity(entity: string) {
-       // this.checkInvariants();
-
         this.makeUnused(entity);
-
-        //this.checkInvariants();
     }
 
     tryFreeEntity(entity: string) {
-        //this.checkInvariants();
-
         if (this.isUsed(entity)) {
             this.freeEntity(entity);
         }
-
-        //this.checkInvariants();
     }
 
     hasEntity(entity: string) {
@@ -292,11 +252,8 @@ export class WorldGenerationSystem {
             new StaticSprite({
                 texture,
                 zIndex: -2,
-                targetSize: buildingSize
-            }),
-            new Body({
-                velocity: backgroundBuildingBodyVelocity,
-                isAffectedByGravity: false
+                targetSize: buildingSize,
+                parallaxDepth: 1.3
             })
         ]);
         this.farthestBackgroundX += buildingSize.x;
@@ -551,14 +508,11 @@ export class WorldGenerationSystem {
 
         for (let { components: [characterTransform, ] } of characters) {
             // Despawning
-            for (let { entity: despawnable, components: [despawnableTransform, ] } of despawnables) {
-                if (despawnableTransform.position.x <= characterTransform.position.x - DESPAWN_DISTANCE) {
+            for (let { entity: despawnable, components: [despawnableTransform, despawnableData, despawnableSprite] } of despawnables) {
+                if (despawnableTransform.position.x * despawnableSprite.parallaxDepth <= characterTransform.position.x - DESPAWN_DISTANCE) {
                     this.freeOrRemove(despawnable);
                 }
             }
-
-            // Syncing with physics updates
-            this.farthestBackgroundX += BG_MOVEMENT_SPEED * dt;
 
             // Spawning
 

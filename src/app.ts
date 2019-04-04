@@ -129,7 +129,7 @@ async function main() {
     storage.setComponents(character, [
         new Character(3),
         new Transform({ x: 0, y: -128 }),
-        new Body({ velocity: Vec2.fromCartesian(0.2, 0), isAffectedByGravity: true }),
+        new Body({ velocity: Vec2.fromCartesian(0.25, 0), isAffectedByGravity: true }),
         new Collider(
             Aabb.fromSize(-34, -62, 68, 124),
             ColliderType.Kinematic,

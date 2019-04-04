@@ -28,19 +28,22 @@ export class DamageSystem {
 
             if (!this.oldGhostState && !characterData.isGhost() && !isNaN(this.oldVelocity) && this.oldVelocity > body.velocity.x) {
                 characterData.subtract();
-                if (characterData.remainingLives <= 0) {
-                    throw new Error(`Game over`);
-                }
-                characterData.makeGhost(1500);
+
+                characterData.makeGhost(characterData.isAlive() ? 1500 : Infinity);
                 collider.collidesWith &= ~CollisionLayer.Obstacle;
                 sprite.isGhost = true;
-                body.velocity.x = 0.2;
+                body.velocity.x = 0.25;
+                /*if (characterData.remainingLives <= 0) {
+                    throw new Error(`Game over`);
+                }*/
             }
 
             this.oldVelocity = body.velocity.x;
             this.oldGhostState = characterData.isGhost();
 
-            body.velocity.x += 0.0000001 / body.velocity.x * dt;
+            if (characterData.isAlive()) {
+                body.velocity.x += 0.0000001 / body.velocity.x * dt;
+            }
         }
     }
 }

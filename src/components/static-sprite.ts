@@ -7,6 +7,7 @@ export class StaticSprite {
 
     public texture: Image;
     public zIndex: number;
+    public parallaxDepth: number;
     public sourceRect: Aabb;
     public targetSize: Vec2;
     public isGhost: boolean;
@@ -17,7 +18,8 @@ export class StaticSprite {
             texture: Image,
             zIndex?: number,
             rect?: Aabb,
-            targetSize?: Vec2
+            targetSize?: Vec2,
+            parallaxDepth?: number
         }
     ) {
         this.texture = options.texture;
@@ -25,6 +27,7 @@ export class StaticSprite {
         this.sourceRect = options.rect || Aabb.fromSize(0, 0, this.texture.width, this.texture.height);
         this.targetSize = options.targetSize || Vec2.fromCartesian(this.sourceRect.width, this.sourceRect.height);
         this.isGhost = false;
+        this.parallaxDepth = options.parallaxDepth || 1;
         // this.opacity = (options.opacity === undefined) ? 1 : options.opacity;
     }
 }

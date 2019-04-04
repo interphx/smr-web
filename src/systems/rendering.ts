@@ -82,16 +82,19 @@ export class RenderingSystem {
                 const spriteHalfWidth = sprite.targetSize.x / 2;
                 const spriteHalfHeight = sprite.targetSize.y / 2;
 
+                const spriteX = transform.getInterpolatedX(alpha);
+                const spriteY = transform.getInterpolatedY(alpha);
+
                 const pos = this.tmpPosition;
-                pos.x = transform.getInterpolatedX(alpha) - spriteHalfWidth - cameraPosX;
-                pos.y = transform.getInterpolatedY(alpha) - spriteHalfHeight - cameraPosY;
+                pos.x = spriteX - spriteHalfWidth - cameraPosX / sprite.parallaxDepth;
+                pos.y = spriteY - spriteHalfHeight - cameraPosY;
 
-                const left = transform.position.x - spriteHalfWidth;
-                const top = transform.position.y - spriteHalfHeight;
-                const right = transform.position.x + spriteHalfWidth;
-                const bottom = transform.position.y + spriteHalfHeight;
+                const left = spriteX - spriteHalfWidth;
+                const top = spriteY - spriteHalfHeight;
+                const right = spriteX + spriteHalfWidth;
+                const bottom = spriteY + spriteHalfHeight;
 
-                if (left > cameraRight || top > cameraBottom || right < cameraLeft || bottom < cameraTop) {
+                if (left > cameraRight / sprite.parallaxDepth || top > cameraBottom || right < cameraLeft / sprite.parallaxDepth || bottom < cameraTop) {
                     continue;
                 }
 
