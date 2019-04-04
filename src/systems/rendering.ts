@@ -19,14 +19,12 @@ const characterAspect = aspect.all(Character);
 
 const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
-const tmpHeartPos = Vec2.fromCartesian(0, 0);
 
 function compareSprites(a: {components:[unknown, {zIndex: number}]}, b: {components:[unknown, {zIndex: number}]}) {
     return a.components[1].zIndex - b.components[1].zIndex;
 }
 
 export class RenderingSystem {
-    private tmpPosition: Vec2 = { x: 0, y: 0 };
     private textures: {
         heart: Image;
     } | null = null;
@@ -85,9 +83,8 @@ export class RenderingSystem {
                 const spriteX = transform.getInterpolatedX(alpha);
                 const spriteY = transform.getInterpolatedY(alpha);
 
-                const pos = this.tmpPosition;
-                pos.x = spriteX - spriteHalfWidth - cameraPosX / sprite.parallaxDepth;
-                pos.y = spriteY - spriteHalfHeight - cameraPosY;
+                const posX = spriteX - spriteHalfWidth - cameraPosX / sprite.parallaxDepth;
+                const posY = spriteY - spriteHalfHeight - cameraPosY;
 
                 const left = spriteX - spriteHalfWidth;
                 const top = spriteY - spriteHalfHeight;
@@ -104,15 +101,14 @@ export class RenderingSystem {
                 }
 
                 if (sprite.isGhost && Math.random() < 0.5) continue;
-                renderer.drawImageRect(pos, sprite.sourceRect, sprite.targetSize, sprite.texture);
+                renderer.drawImageRect(posX, posY, sprite.sourceRect, sprite.targetSize, sprite.texture);
             }
 
             for (let { components: [transform, text] } of texts) {
-                const pos = this.tmpPosition;
-                pos.x = transform.getInterpolatedX(alpha) - cameraPosX;
-                pos.y = transform.getInterpolatedY(alpha) - cameraPosY;
+                const posX = transform.getInterpolatedX(alpha) - cameraPosX;
+                const posY = transform.getInterpolatedY(alpha) - cameraPosY;
 
-                renderer.drawTextWithOpacity(pos.x, pos.y, text.text, text.opacity);
+                renderer.drawTextWithOpacity(posX, posY, text.text, text.opacity);
             }
         }
 
@@ -125,9 +121,13 @@ export class RenderingSystem {
                     const rect = ((i + 1) <= characterData.remainingLives)
                         ? heartFullRect
                         : heartEmptyRect;
-                    tmpHeartPos.x = -320 + 30 + i * (32 + 8);
-                    tmpHeartPos.y = -240 + 40;
-                    renderer.drawImageRect(tmpHeartPos, rect, rect.size, this.textures.heart);
+                    renderer.drawImageRect(
+                        -320 + 30 + i * (32 + 8), 
+                        -240 + 40, 
+                        rect, 
+                        rect.size, 
+                        this.textures.heart
+                    );
                 }
             }
         }

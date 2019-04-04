@@ -73,7 +73,7 @@ export class Renderer {
     }
 
     public drawImageRect(
-        topLeft: Vec2,
+        x: number, y: number,
         sourceRect: Aabb,
         targetSize: Vec2,
         image: HTMLImageElement | HTMLCanvasElement
@@ -82,7 +82,7 @@ export class Renderer {
             image,
             sourceRect.left, sourceRect.top,
             sourceRect.width, sourceRect.height,
-            topLeft.x, topLeft.y,
+            x, y,
             targetSize.x, targetSize.y
         );
     }
