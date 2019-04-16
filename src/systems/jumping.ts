@@ -36,17 +36,22 @@ export class JumpingSystem {
                 body.velocity.y = Math.max(0.1, body.velocity.y);
             }
 
+            if (body.velocity.y < -0.4) {
+                animation.playOrContinueAnimation('jump-ascending');
+            } else if (body.velocity.y > 0.4) {
+                animation.playOrContinueAnimation('jump-descending');
+            } else if (!body.isLanded) {
+                animation.playOrContinueAnimation('jump-apex');
+            } else {
+                animation.playOrContinueAnimation('run');
+            }
+
             if (jumpPressed) {
                 if (body.isLanded && !jump.isJumpHeld) {
                     jump.startJumping();
-                    animation.playAnimation('jump');
                 }
             } else {
                 jump.stopJumping();
-
-                if (body.isLanded && animation.getCurrentAnimation()) {
-                    animation.playOrContinueAnimation('run');
-                }
             }
         }
     }

@@ -1,75 +1,11 @@
 import { ComponentStorage } from './component-storage';
 import { hasProperty } from 'utils/object';
 import { ComponentClass, ComponentInstance } from './component';
-
-type AspectBase = {
-    hash: string;
-    includedComponents: ComponentClass[];
-}
-
-type TrackedEntity<TComponents = ReadonlyArray<ComponentInstance<any>>> = {
-    entity: string;
-    components: TComponents;
-}
-
-type ComponentClassKeys<T extends ComponentClass[]> = {
-    [key in keyof T]: T[key] extends ComponentClass ? key : never
-}[keyof T];
+import { TrackingTable, TrackedEntity } from './tracking-table';
 
 type InstanceTypes<T extends (new (...args: any[]) => any)[]> = {
     [key in keyof T]: T[key] extends (new (...args: any[]) => any) ? InstanceType<T[key]> : never
 };
-
-class TrackingTable {
-    private componentTypes: ReadonlyArray<ComponentClass>;
-    private entries: TrackedEntity<ReadonlyArray<ComponentInstance<any>>>[];
-    private entityIndices: {[entity: string]: number} = Object.create(null);
-
-    constructor(
-        componentTypes: ReadonlyArray<ComponentClass>,
-        entries: TrackedEntity<ComponentInstance<any>[]>[]
-    ) {
-        this.componentTypes = componentTypes;
-        this.entries = entries;
-        for (let i = 0; i < this.entries.length; ++i) {
-            this.entityIndices[this.entries[i].entity] = i;
-        }
-    }
-
-    public getEntityData(entity: string) {
-        if (!hasProperty(this.entityIndices, entity)) {
-            return null;
-        }
-        return this.entries[this.entityIndices[entity]];
-    }
-
-    public getComponentTypes() {
-        return this.componentTypes;
-    }
-
-    public getEntries() {
-        return this.entries;
-    }
-
-    public addIfNone(entity: string, components: ReadonlyArray<ComponentInstance<any>>) {
-        if (hasProperty(this.entityIndices, entity)) {
-            return;
-        }
-        this.entityIndices[entity] = this.entries.push({ entity, components }) - 1;
-    }
-
-    public removeIfExists(entity: string) {
-        if (hasProperty(this.entityIndices, entity)) {
-            const entries       = this.entries;
-            const entityIndices = this.entityIndices;
-            const index         = entityIndices[entity];
-
-            entries[index] = entries[entries.length - 1];
-            entityIndices[entries[index].entity] = index;
-            entries.length -= 1;
-        }
-    }
-}
 
 export class EntityStorage {
     private lastEntityId: number = 0;
@@ -105,6 +41,18 @@ export class EntityStorage {
         this.updateTracking(entityId);
     }
 
+    public removeComponent<T extends ComponentClass>(entityId: string, componentType: T) {
+        this.storages[componentType.componentName].remove(entityId);
+        this.updateTracking(entityId);
+    }
+
+    public removeComponents<T extends ReadonlyArray<ComponentClass>>(entityId: string, componentTypes: T) {
+        for (let componentClass of componentTypes) {
+            this.storages[componentClass.componentName].remove(entityId);
+        }
+        this.updateTracking(entityId);
+    }
+
     public setComponents<T extends ReadonlyArray<InstanceType<ComponentClass>>>(entityId: string, components: T) {
         for (let component of components) {
             this.storages[(component.constructor as ComponentClass).componentName].set(entityId, component);
@@ -120,9 +68,16 @@ export class EntityStorage {
         return this.storages[componentType.componentName].has(entityId);
     }
 
+    public hasEntity(entity: string) {
+        return (entity in this.entities);
+    }
+
     public getByAspect<T extends { hash: string, includedComponents: ComponentClass[]}>(aspect: T): ReadonlyArray<TrackedEntity<InstanceTypes<T['includedComponents']>>> {
-        if (!this.tracked[aspect.hash]) {
-            this.tracked[aspect.hash] = new TrackingTable(aspect.includedComponents, this.findByAspect(aspect));
+        if (!(aspect.hash in this.tracked)) {
+            this.tracked[aspect.hash] = new TrackingTable(
+                aspect.includedComponents,
+                this.findByAspect(aspect)
+            );
         }
         return this.tracked[aspect.hash].getEntries() as ReadonlyArray<TrackedEntity<any>>;
     }
@@ -171,7 +126,7 @@ export class EntityStorage {
     private findByAspect<T extends { hash: string, includedComponents: ComponentClass[]}>(aspect: T) {
         const results: TrackedEntity<T['includedComponents']>[] = [];
         for (let entity in this.entities) {
-            if (!hasProperty(this.entities, entity)) continue;
+            if (this.entities[entity] !== true) continue;
             let isValid = true;
             const components: ComponentInstance<any>[] = [];
             for (let componentType of aspect.includedComponents) {

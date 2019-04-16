@@ -1,6 +1,4 @@
-import { ComponentClass, ComponentInstance } from './component';
-import { StaticSprite } from 'components/static-sprite';
-import { FrameAnimation } from 'components/frame-animation';
+import { ComponentClass } from './component';
 
 function calculateHash(components: ReadonlyArray<ComponentClass>) {
     const names: string[] = [];

@@ -13,7 +13,7 @@ import { Collectible } from 'components/collectible';
 import { FrameAnimation } from 'components/frame-animation';
 import { Milliseconds } from 'types/milliseconds';
 import { all } from 'core/aspect';
-import { hasProperty } from 'utils/object';
+import { EntityPool } from 'core/entity-pool';
 
 const characterAspect = all(Transform, Character);
 const despawnableAspect = all(Transform, Despawnable, StaticSprite);
@@ -42,95 +42,29 @@ const boxHalf = 28;
 const boxFull = 56;
 const ampFull = 44;
 
-class EntityPool {
-    private entityIndices: {[key: string]: number} = Object.create(null);
-    private entities: string[] = [];
-    private firstUnusedIndex: number = 0;
+class WorldObjectPool<TComponents> {
+    private entities: TComponents[] = [];
 
-    /*private checkInvariants() {
-        for (let entity in this.entityIndices) {
-            if (this.entities[this.entityIndices[entity]] !== entity) {
-                throw new Error(`Entity cached index mismatch for ${entity} (cached ${this.entityIndices[entity]}, actual ${this.entities.indexOf(entity)})`);
-            }
-        }
-        for (let entity of this.entities) {
-            let count = 0;
-            for (let other of this.entities) {
-                if (other === entity) count += 1;
-            }
-            if (count !== 1) {
-                throw new Error(`Invalid entity count: expected 1, got ${count}`);
-            }
-        }
-        for (let entity of this.entities) {
-            if (!this.has(entity)) throw new Error(`Entity is enlisted but not "had"`);
-        }
-    }*/
+    constructor(
+        private storage: EntityStorage,
+        private createComponents: (x: number, y: number) => TComponents,
+        private initializeComponents: (x: number, y: number, components: TComponents) => void
+    ) {
 
-    private has(entity: string) {
-        return hasProperty(this.entityIndices, entity);
     }
 
-    private isUsed(entity: string) {
-        return this.entityIndices[entity] < this.firstUnusedIndex;
+    add(components: TComponents) {
+        this.entities.push(components);
     }
 
-    private isFree(entity: string) {
-        return this.entityIndices[entity] >= this.firstUnusedIndex;
-    }
-
-    private swap(indexA: number, indexB: number) {
-        const a = this.entities[indexA];
-        const b = this.entities[indexB];
-
-        this.entities[indexA] = b;
-        this.entities[indexB] = a;
-
-        this.entityIndices[a] = indexB;
-        this.entityIndices[b] = indexA;
-    }
-
-    private addNewUsed(entity: string) {
-        this.entityIndices[entity] = this.entities.push(entity) - 1;
-        this.swap(this.entities.length - 1, this.firstUnusedIndex);
-        this.firstUnusedIndex += 1;
-    }
-
-    private makeUsed(entity: string) {
-        this.swap(this.entityIndices[entity], this.firstUnusedIndex);
-        this.firstUnusedIndex += 1;
-    }
-
-    private makeUnused(entity: string) {
-        this.swap(this.entityIndices[entity], this.firstUnusedIndex - 1);
-        this.firstUnusedIndex -= 1;
-    }
-
-    addUsedEntity(entity: string) {
-        this.addNewUsed(entity);
-    }
-
-    getEntity() {
-        if (this.firstUnusedIndex < this.entities.length) {
-            const result = this.entities[this.firstUnusedIndex];
-            this.makeUsed(result);
-            return result;
-        }
-        return null;
-    }
-
-    freeEntity(entity: string) {
-        this.makeUnused(entity);
-    }
-
-    tryFreeEntity(entity: string) {
-        if (this.isUsed(entity)) {
-            this.freeEntity(entity);
-        }
-    }
-
-    hasEntity(entity: string) {
-        return this.has(entity);
+    get(x: number, y: number) {
+        const components = (this.entities.length > 0)
+            ? this.entities.pop()!
+            : this.createComponents(x, y);
+        this.initializeComponents(x, y, components);
+        const entity = this.storage.createEntity();
+        this.storage.setComponents(entity, components as any);
+        return entity;
     }
 }
 
@@ -140,6 +74,42 @@ export class WorldGenerationSystem {
     private farthestForegroundX: number = -400;
     private farthestBackgroundX: number = -400;
     private farthestChallengeX: number = 0;
+
+    /*private amplifierPool = new WorldObjectPool<[Transform, Collider, Collectible, StaticSprite, FrameAnimation]>(
+        this.storage,
+        (x, y) => {
+            if (!this.textures) throw new Error();
+
+            return [
+                new Transform({ x, y }),
+                new Collider(
+                    amplifierColliderAabb,
+                    ColliderType.Trigger,
+                    CollisionLayer.Collectible
+                ),
+                new Collectible(10),
+                new StaticSprite({
+                    texture: this.textures.amplifier,
+                    zIndex: 1,
+                    rect: amplifierSpriteAabb,
+                    targetSize: amplifierSpriteSize
+                }),
+                new FrameAnimation({
+                    animations: {
+                        'rotate': {
+                            duration: Milliseconds.from(1000),
+                            frames: amplifierRotateFrames,
+                            mode: 'repeat'
+                        }
+                    },
+                    currentAnimation: 'rotate'
+                })
+            ]
+        },
+        (x, y, [transform]) => {
+            transform.teleportTo(x, y);
+        }
+    );*/
 
     private textures: {
         platform: Image,
@@ -164,6 +134,17 @@ export class WorldGenerationSystem {
             }, 400);
         });
     }
+
+    /*public freeAmplifierEntity(entity: string) {
+        this.amplifierPool.add([
+            this.storage.getComponent(entity, Transform),
+            this.storage.getComponent(entity, Collider),
+            this.storage.getComponent(entity, Collectible),
+            this.storage.getComponent(entity, StaticSprite),
+            this.storage.getComponent(entity, FrameAnimation)
+        ]);
+        this.storage.removeEntity(entity);
+    }*/
 
     async initialize() {
         const platform = await loadImage('assets/images/platform.png');
@@ -205,7 +186,6 @@ export class WorldGenerationSystem {
             sprite.targetSize.x = texture.width;
             sprite.targetSize.y = texture.height;
         } else {
-
             const buildingSize = Vec2.fromCartesian(
                 texture.width,
                 texture.height
@@ -230,6 +210,7 @@ export class WorldGenerationSystem {
         this.farthestForegroundX += texture.width;
     }
 
+    private backgroundBuildingPool = new EntityPool();
     spawnBackgroundBuilding() {
         if (!this.textures) return;
 
@@ -237,26 +218,43 @@ export class WorldGenerationSystem {
 
         const texture = randomPick(this.textures.backgroundBuildings);
 
-        const buildingSize = Vec2.fromCartesian(
-            texture.width,
-            texture.height
-        );
+        const existingBackgroundBuilding = this.backgroundBuildingPool.getEntity();
 
-        const building = storage.createEntity();
-        storage.setComponents(building, [
-            new Transform({
-                x: this.farthestBackgroundX + buildingSize.x / 2,
-                y: -180 - (buildingSize.y / 2)
-            }),
-            new Despawnable(),
-            new StaticSprite({
-                texture,
-                zIndex: -2,
-                targetSize: buildingSize,
-                parallaxDepth: 1.3
-            })
-        ]);
-        this.farthestBackgroundX += buildingSize.x;
+        if (existingBackgroundBuilding) {
+            const transform = storage.getComponent(existingBackgroundBuilding, Transform);
+            const sprite = storage.getComponent(existingBackgroundBuilding, StaticSprite);
+
+            sprite.texture = texture;
+            sprite.sourceRect.width = texture.width;
+            sprite.sourceRect.height = texture.height;
+            sprite.targetSize.x = texture.width;
+            sprite.targetSize.y = texture.height;
+
+            transform.teleportTo(this.farthestBackgroundX + texture.width / 2, -180 - (texture.height / 2));
+        } else {
+            const buildingSize = Vec2.fromCartesian(
+                texture.width,
+                texture.height
+            );
+
+            const building = storage.createEntity();
+            this.backgroundBuildingPool.addUsedEntity(building);
+
+            storage.setComponents(building, [
+                new Transform({
+                    x: this.farthestBackgroundX + buildingSize.x / 2,
+                    y: -180 - (buildingSize.y / 2)
+                }),
+                new Despawnable(),
+                new StaticSprite({
+                    texture,
+                    zIndex: -2,
+                    targetSize: buildingSize,
+                    parallaxDepth: 1.3
+                })
+            ]);
+        }
+        this.farthestBackgroundX += texture.width;
     }
 
     private platformPool = new EntityPool();
@@ -298,6 +296,7 @@ export class WorldGenerationSystem {
 
         const { storage } = this;
 
+        
         const existingAmplifier = this.amplifierPool.getEntity();
 
         if (existingAmplifier) {
@@ -368,7 +367,7 @@ export class WorldGenerationSystem {
         }
     }
 
-    patterns = [
+    private patterns = [
         this.patternA.bind(this),
         this.patternB.bind(this),
         this.patternC.bind(this),
@@ -487,12 +486,12 @@ export class WorldGenerationSystem {
     freeOrRemove(entity: string) {
         if (this.platformPool.hasEntity(entity)) {
             this.platformPool.tryFreeEntity(entity);
-        } else if (this.amplifierPool.hasEntity(entity)) {
-            this.amplifierPool.tryFreeEntity(entity);
         } else if (this.boxPool.hasEntity(entity)) {
             this.boxPool.tryFreeEntity(entity);
         } else if (this.foregroundBuildingPool.hasEntity(entity)) {
             this.foregroundBuildingPool.tryFreeEntity(entity);
+        } else if (this.backgroundBuildingPool.hasEntity(entity)) {
+            this.backgroundBuildingPool.tryFreeEntity(entity);
         } else {
             this.storage.removeEntity(entity);
         }
@@ -508,6 +507,7 @@ export class WorldGenerationSystem {
 
         for (let { components: [characterTransform, ] } of characters) {
             // Despawning
+           
             for (let { entity: despawnable, components: [despawnableTransform, despawnableData, despawnableSprite] } of despawnables) {
                 if (despawnableTransform.position.x * despawnableSprite.parallaxDepth <= characterTransform.position.x - DESPAWN_DISTANCE) {
                     this.freeOrRemove(despawnable);
@@ -517,7 +517,7 @@ export class WorldGenerationSystem {
             // Spawning
 
             const spawnFrontier = characterTransform.position.x + SPAWN_DISTANCE;
-            const spawnFrontierExtended = spawnFrontier + SPAWN_DISTANCE;
+            const spawnFrontierExtended = spawnFrontier + SPAWN_DISTANCE * 2;
 
             if (
                 this.farthestPlatformX < spawnFrontier &&
@@ -541,44 +541,7 @@ export class WorldGenerationSystem {
                 while (this.farthestChallengeX < spawnFrontierExtended) {
                     this.spawnChallenge();
                 }
-
-                /*for (let i = 0; i < 4; ++i) {
-                    this.spawnPlatform();
-                }
-                for (let i = 0; i < 9; ++i) {
-                    this.spawnForegroundBuilding();
-                }
-                for (let i = 0; i < 7; ++i) {
-                    this.spawnBackgroundBuilding();
-                }
-                for (let i = 0; i < 4; ++i) {
-                    this.spawnChallenge();
-                }*/
             }
-            /*
-            if (this.farthestPlatformX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 3; ++i) {
-                    this.spawnPlatform();
-                }
-            }
-
-            if (this.farthestForegroundX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 6; ++i) {
-                    this.spawnForegroundBuilding();
-                }
-            }
-
-            if (this.farthestBackgroundX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 6; ++i) {
-                    this.spawnBackgroundBuilding();
-                }
-            }
-
-            if (this.farthestChallengeX < characterTransform.position.x + SPAWN_DISTANCE) {
-                for (let i = 0; i < 4; ++i) {
-                    this.spawnChallenge();
-                }
-            }*/
         }
     }
 }

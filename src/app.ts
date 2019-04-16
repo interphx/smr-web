@@ -87,7 +87,9 @@ async function main() {
     const collisionSystem = new CollisionSystem(storage);
     const jumpingSystem = new JumpingSystem(storage, keyboard, pointer);
     const worldGenerationSystem = new WorldGenerationSystem(storage);
-    const scoringSystem = new ScoringSystem(storage);
+    const scoringSystem = new ScoringSystem(storage, entity => {
+        storage.removeEntity(entity);
+    });
     const damageSystem = new DamageSystem(storage);
     // const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
     const speedSystem = new SpeedSystem(storage);
@@ -95,7 +97,7 @@ async function main() {
     await worldGenerationSystem.waitForInitialization();
     await renderingSystem.waitForInitialization();
 
-    let rareUpdateCounter = 0;
+    let frameCount = 0;
 
     const loop = new GameLoop({
         timestep: Milliseconds.from(1000 / 30),
@@ -104,17 +106,18 @@ async function main() {
             physicsSystem.run(dt);
             collisionSystem.run(dt);
             cameraSystem.run(dt);
+            scoringSystem.run(dt);
         },
         onVariableUpdate: (dt, alpha) => {
             animationSystem.run(dt);
             renderingSystem.run(dt, alpha);
             // debugRenderingSystem.run(dt, alpha);
-            scoringSystem.run(dt);
+            
             damageSystem.run(dt);
             speedSystem.run(dt);
 
-            rareUpdateCounter += 1;
-            if ((rareUpdateCounter < 5) || (rareUpdateCounter % 15 === 0)) {
+            frameCount += 1;
+            if ((frameCount < 5) || (frameCount % 15 === 0)) {
                 worldGenerationSystem.run(dt);
             }
 
@@ -143,15 +146,15 @@ async function main() {
     ]);
     await loadImage('assets/images/character.png')
         .then(texture => {
-            const runFrames = FrameAnimation.generateSpritesheetFrames(
-                Vec2.fromCartesian(128, 128),
-                Vec2.fromCartesian(texture.width, texture.height)
-            ).slice(1, 7);
+            const frameSize = Vec2.fromCartesian(128, 128);
+            const textureSize = Vec2.fromCartesian(texture.width, texture.height);
+            const frames = FrameAnimation.generateSpritesheetFrames(frameSize, textureSize);
 
-            const jumpFrames = FrameAnimation.generateSpritesheetFrames(
-                Vec2.fromCartesian(128, 128),
-                Vec2.fromCartesian(texture.width, texture.height)
-            ).slice(7, 9);
+            const runFrames = frames.slice(1, 7);
+
+            const jumpAscendingFrames = frames.slice(7, 8);
+            const jumpApexFrames = frames.slice(8, 9);
+            const jumpDescendingFrames = frames.slice(9, 10);
 
             storage.setComponents(character, [
                 new StaticSprite({
@@ -166,9 +169,19 @@ async function main() {
                             frames: runFrames,
                             mode: 'repeat'
                         },
-                        'jump': {
+                        'jump-ascending': {
                             duration: Milliseconds.from(600),
-                            frames: jumpFrames,
+                            frames: jumpAscendingFrames,
+                            mode: 'repeat'
+                        },
+                        'jump-apex': {
+                            duration: Milliseconds.from(600),
+                            frames: jumpApexFrames,
+                            mode: 'repeat'
+                        },
+                        'jump-descending': {
+                            duration: Milliseconds.from(600),
+                            frames: jumpDescendingFrames,
                             mode: 'repeat'
                         }
                     },
@@ -183,8 +196,9 @@ async function main() {
         new Transform({ x: 0, y: 0 })
     ]);
 
-    document.addEventListener('scroll', event => event.preventDefault());
-    document.addEventListener('touchmove', event => event.preventDefault()); 
+    const prevent = (event: Event) => void event.preventDefault();
+    document.addEventListener('scroll', prevent);
+    document.addEventListener('touchmove', prevent); 
 
     document.body.appendChild(renderer.getCanvas());
 

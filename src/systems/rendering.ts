@@ -11,6 +11,8 @@ import { loadImage } from 'utils/ajax';
 import { Image } from 'types/image';
 import { Text } from 'components/text';
 import * as aspect from 'core/aspect';
+import { TrackedEntity } from 'core/tracking-table';
+import { copyArray } from 'utils/iterable';
 
 const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
@@ -19,6 +21,8 @@ const characterAspect = aspect.all(Character);
 
 const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
+
+const tmpSpritesArray: TrackedEntity<[Transform, StaticSprite]>[] = [];
 
 function compareSprites(a: {components:[unknown, {zIndex: number}]}, b: {components:[unknown, {zIndex: number}]}) {
     return a.components[1].zIndex - b.components[1].zIndex;
@@ -59,7 +63,7 @@ export class RenderingSystem {
         renderer.clear();
 
         const cameras    = storage.getByAspect(cameraAspect);
-        const sprites    = storage.getByAspect(spriteAspect).slice();
+        const sprites    = copyArray(storage.getByAspect(spriteAspect), tmpSpritesArray);
         const texts      = storage.getByAspect(textAspect);
         const characters = storage.getByAspect(characterAspect);
 
