@@ -55,7 +55,7 @@ function getScreenSize(targetSize: Vec2) {
     return Vec2.fromCartesian(width, height);
 }
 
-async function createCharacter(storage: EntityStorage, imageLoader: ImageAssetLoader) {
+async function createCharacter(storage: EntityStorage, imageLoader: AssetLoader<Image>) {
     const character = storage.createEntity();
     storage.setComponents(character, [
         new Character(3),
@@ -129,17 +129,12 @@ function createCamera(storage: EntityStorage, characterId: string, size: Vec2) {
     ]);
 }
 
-function createGame(imageLoader: AssetLoader<Image>) {
-
-}
-
-async function main() {
-    const INITIAL_SCREEN_SIZE = getScreenSize(TARGET_SIZE);
-
-    const assetLoaders = {
-        image: new ImageAssetLoader()
-    };
-
+async function createGameLoop(
+    imageLoader: AssetLoader<Image>,
+    renderer: Renderer,
+    keyboardInput: KeyboardInput,
+    pointerInput: PointerInput
+) {
     const storage = new EntityStorage();
     storage.registerComponentType(Transform);
     storage.registerComponentType(StaticSprite);
@@ -155,23 +150,13 @@ async function main() {
     storage.registerComponentType(FloatingText);
     setup(storage);
 
-    const renderer = new Renderer({
-        size           : Vec2.clone(INITIAL_SCREEN_SIZE),
-        resolution     : TARGET_SIZE,
-        backgroundColor: 'black',
-        enableSmoothing: true
-    });
-
-    const keyboard = new KeyboardInput();
-    const pointer = new PointerInput();
-
-    const renderingSystem = new RenderingSystem(storage, renderer, assetLoaders.image);
+    const renderingSystem = new RenderingSystem(storage, renderer, imageLoader);
     const cameraSystem = new CameraSystem(storage);
     const physicsSystem = new PhysicsSystem(storage);
     const animationSystem = new AnimationSystem(storage);
     const collisionSystem = new CollisionSystem(storage);
-    const jumpingSystem = new JumpingSystem(storage, keyboard, pointer);
-    const worldGenerationSystem = new WorldGenerationSystem(storage, assetLoaders.image);
+    const jumpingSystem = new JumpingSystem(storage, keyboardInput, pointerInput);
+    const worldGenerationSystem = new WorldGenerationSystem(storage, imageLoader);
     const scoringSystem = new ScoringSystem(storage, entity => {
         storage.removeEntity(entity);
     });
@@ -210,21 +195,42 @@ async function main() {
         }
     });
 
-    (window as any).loop = loop;
-    (window as any).entityStorage = storage;
-
-    const character = await createCharacter(storage, assetLoaders.image);
+    const character = await createCharacter(storage, imageLoader);
     const camera = createCamera(storage, character, TARGET_SIZE);
 
-    const prevent = (event: Event) => void event.preventDefault();
-    document.addEventListener('scroll', prevent);
-    document.addEventListener('touchmove', prevent); 
+    return loop;
+}
+
+function prepareContainer(container: Node) {
+    const prevent = (event: Event) => { event.preventDefault() };
+
+    container.addEventListener('scroll', prevent);
+    container.addEventListener('touchmove', prevent);
+}
+
+async function main() {
+    const INITIAL_SCREEN_SIZE = getScreenSize(TARGET_SIZE);
+
+    const assetLoaders = {
+        image: new ImageAssetLoader()
+    };
+
+    const renderer = new Renderer({
+        size           : Vec2.clone(INITIAL_SCREEN_SIZE),
+        resolution     : TARGET_SIZE,
+        backgroundColor: 'black',
+        enableSmoothing: true
+    });
+    const keyboard = new KeyboardInput();
+    const pointer = new PointerInput();
 
     document.body.appendChild(renderer.getCanvas());
 
-    loop.start();
+    const gameLoop = await createGameLoop(assetLoaders.image, renderer, keyboard, pointer);
+    gameLoop.start();
 }
 
 waitForDocumentLoad()
+    .then(() => prepareContainer(window.document))
     .then(() => delay(Milliseconds.from(1000)))
     .then(main);

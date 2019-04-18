@@ -14,6 +14,7 @@ import * as aspect from 'core/aspect';
 import { TrackedEntity } from 'core/tracking-table';
 import { copyArray } from 'utils/iterable';
 import { ImageAssetLoader } from 'core/image-asset-loader';
+import { AssetLoader } from 'core/asset-loader';
 
 const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
@@ -37,7 +38,7 @@ export class RenderingSystem {
     constructor(
         private storage: EntityStorage,
         private renderer: Renderer,
-        private imageLoader: ImageAssetLoader
+        private imageLoader: AssetLoader<Image>
     ) {
     }
 
