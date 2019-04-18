@@ -14,6 +14,7 @@ import { FrameAnimation } from 'components/frame-animation';
 import { Milliseconds } from 'types/milliseconds';
 import { all } from 'core/aspect';
 import { EntityPool } from 'core/entity-pool';
+import { AssetLoader } from 'core/asset-loader';
 
 const characterAspect = all(Transform, Character);
 const despawnableAspect = all(Transform, Despawnable, StaticSprite);
@@ -75,42 +76,6 @@ export class WorldGenerationSystem {
     private farthestBackgroundX: number = -400;
     private farthestChallengeX: number = 0;
 
-    /*private amplifierPool = new WorldObjectPool<[Transform, Collider, Collectible, StaticSprite, FrameAnimation]>(
-        this.storage,
-        (x, y) => {
-            if (!this.textures) throw new Error();
-
-            return [
-                new Transform({ x, y }),
-                new Collider(
-                    amplifierColliderAabb,
-                    ColliderType.Trigger,
-                    CollisionLayer.Collectible
-                ),
-                new Collectible(10),
-                new StaticSprite({
-                    texture: this.textures.amplifier,
-                    zIndex: 1,
-                    rect: amplifierSpriteAabb,
-                    targetSize: amplifierSpriteSize
-                }),
-                new FrameAnimation({
-                    animations: {
-                        'rotate': {
-                            duration: Milliseconds.from(1000),
-                            frames: amplifierRotateFrames,
-                            mode: 'repeat'
-                        }
-                    },
-                    currentAnimation: 'rotate'
-                })
-            ]
-        },
-        (x, y, [transform]) => {
-            transform.teleportTo(x, y);
-        }
-    );*/
-
     private textures: {
         platform: Image,
         amplifier: Image,
@@ -119,39 +84,27 @@ export class WorldGenerationSystem {
         foregroundBuildings: ReadonlyArray<Image>
     } | null = null;
 
-    constructor(private storage: EntityStorage) {
+    constructor(private storage: EntityStorage, private imageLoader: AssetLoader<Image>) {
         this.removeEntity = this.removeEntity.bind(this);
-        this.initialize();
     }
-
-    public async waitForInitialization() {
-        return new Promise(resolve => {
-            const interval = setInterval(() => {
-                if (this.textures) {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 400);
-        });
-    }
-
-    /*public freeAmplifierEntity(entity: string) {
-        this.amplifierPool.add([
-            this.storage.getComponent(entity, Transform),
-            this.storage.getComponent(entity, Collider),
-            this.storage.getComponent(entity, Collectible),
-            this.storage.getComponent(entity, StaticSprite),
-            this.storage.getComponent(entity, FrameAnimation)
-        ]);
-        this.storage.removeEntity(entity);
-    }*/
 
     async initialize() {
-        const platform = await loadImage('assets/images/platform.png');
-        const amplifier = await loadImage('assets/images/amplifier.png');
-        const box = await loadImage('assets/images/box.png');
-        const backgroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`assets/images/background_building_${n}.png`)));
-        const foregroundBuildings = await Promise.all(range(0, 7).map(n => loadImage(`assets/images/foreground_building_${n}.png`)));
+        const get = this.imageLoader.get.bind(this.imageLoader);
+
+        const [
+            platform,
+            amplifier,
+            box,
+            backgroundBuildings,
+            foregroundBuildings
+        ] = await Promise.all([
+            get('assets/images/platform.png'),
+            get('assets/images/amplifier.png'),
+            get('assets/images/box.png'),
+            Promise.all(range(0, 7).map(n => get(`assets/images/background_building_${n}.png`))),
+            Promise.all(range(0, 7).map(n => get(`assets/images/foreground_building_${n}.png`)))
+        ]);
+
         this.textures = {
             platform,
             amplifier,

@@ -13,6 +13,7 @@ import { Text } from 'components/text';
 import * as aspect from 'core/aspect';
 import { TrackedEntity } from 'core/tracking-table';
 import { copyArray } from 'utils/iterable';
+import { ImageAssetLoader } from 'core/image-asset-loader';
 
 const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
@@ -35,24 +36,13 @@ export class RenderingSystem {
 
     constructor(
         private storage: EntityStorage,
-        private renderer: Renderer
+        private renderer: Renderer,
+        private imageLoader: ImageAssetLoader
     ) {
-        this.initialize();
-    }
-
-    public async waitForInitialization() {
-        return new Promise(resolve => {
-            const interval = setInterval(() => {
-                if (this.textures) {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 400);
-        });
     }
 
     async initialize() {
-        const heart = await loadImage('assets/images/heart.png');
+        const heart = await this.imageLoader.get('assets/images/heart.png');
         this.textures = { heart };
     }
 
