@@ -193,12 +193,14 @@ export class GameplayGameScreen implements GameScreen {
         private renderer: Renderer,
         private keyboard: KeyboardInput,
         private pointer: PointerInput,
-        private imageLoader: AssetLoader<Image>
+        private imageLoader: AssetLoader<Image>,
+        private container: Node
     ) {
 
     }
 
     async start(): Promise<void> {
+        this.container.appendChild(this.renderer.getCanvas());
         this.loop = await createGameLoop(
             this.imageLoader,
             this.renderer,
@@ -213,6 +215,10 @@ export class GameplayGameScreen implements GameScreen {
         if (this.loop) {
             this.loop.stop();
             this.loop = null;
+        }
+        this.renderer.clear();
+        if (this.renderer.getCanvas().parentNode === this.container) {
+            this.container.removeChild(this.renderer.getCanvas());
         }
     }
 }

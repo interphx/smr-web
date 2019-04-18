@@ -1,43 +1,14 @@
-import { EntityStorage } from 'core/entity-storage';
-import { Transform } from 'components/transform';
-import { StaticSprite } from 'components/static-sprite';
-import { Renderer } from 'core/renderer';
-import { GameLoop } from 'core/game-loop';
-import { Milliseconds } from 'types/milliseconds';
-import { Camera } from 'components/camera';
-import { waitForDocumentLoad } from 'utils/ajax';
-import { Character } from 'components/character';
-import { RenderingSystem } from 'systems/rendering';
-import { CameraSystem } from 'systems/camera';
-import { PhysicsSystem } from 'systems/physics';
-import { Vec2 } from 'types/vec2';
-import { KeyboardInput } from 'input/keyboard';
-import { delay } from 'utils/async';
-import { AnimationSystem } from 'systems/animation';
-import { FrameAnimation } from 'components/frame-animation';
-import { Body } from 'components/body';
-import { Collider, ColliderType, CollisionLayer } from 'components/collider';
-import { Aabb } from 'types/aabb';
-import { Image } from 'types/image';
-import { CollisionSystem } from 'systems/collision';
-import { Jump } from 'components/jump';
-import { JumpingSystem } from 'systems/jumping';
-import { Despawnable } from 'components/despawnable';
-import { WorldGenerationSystem } from 'systems/world-generation';
-import { ScoringSystem } from 'systems/scoring';
-import { PointerInput } from 'input/pointer';
-import { Collectible } from 'components/collectible';
-import { setup } from 'setup';
-import { DamageSystem } from 'systems/damage';
-import { DebugRenderingSystem } from 'systems/debug-rendering';
-import { SpeedSystem } from 'systems/speed';
-import { Text } from 'components/text';
-import { FloatingText } from 'components/floating-text';
 import { ImageAssetLoader } from 'core/image-asset-loader';
-import { AssetLoader } from 'core/asset-loader';
+import { Renderer } from 'core/renderer';
+import { KeyboardInput } from 'input/keyboard';
+import { PointerInput } from 'input/pointer';
 import { GameScreenFSM } from 'screens/game-screen-fsm';
-import { MenuGameScreen } from 'screens/menu-game-screen';
 import { GameplayGameScreen } from 'screens/gameplay-game-screen';
+import { MenuGameScreen } from 'screens/menu-game-screen';
+import { Milliseconds } from 'types/milliseconds';
+import { Vec2 } from 'types/vec2';
+import { waitForDocumentLoad } from 'utils/ajax';
+import { delay } from 'utils/async';
 
 const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
@@ -65,6 +36,15 @@ function prepareContainer(container: Node) {
     container.addEventListener('touchmove', prevent);
 }
 
+function createContainer(size: Vec2) {
+    const container = document.createElement('div');
+    container.style.width = `${size.x}px`;
+    container.style.height = `${size.y}px`;
+    container.style.margin = `0 auto`;
+    container.style.position = `relative`;
+    return container;    
+}
+
 async function main() {
     const INITIAL_SCREEN_SIZE = getScreenSize(TARGET_SIZE);
 
@@ -80,24 +60,31 @@ async function main() {
     });
     const keyboard = new KeyboardInput();
     const pointer = new PointerInput();
+    const container = createContainer(Vec2.clone(INITIAL_SCREEN_SIZE));
 
-    document.body.appendChild(renderer.getCanvas());
+    document.body.appendChild(container);
 
-    const menuScreen = new MenuGameScreen();
+    const setScreen = (screenName: 'menu' | 'gameplay') => { screenFsm.transitionTo(screenName) };
+    const menuScreen = new MenuGameScreen(
+        setScreen,
+        assetLoaders.image,
+        container
+    );
     const gameplayScreen = new GameplayGameScreen(
-        (screenName) => {},
+        setScreen,
         renderer,
         keyboard,
         pointer,
-        assetLoaders.image
+        assetLoaders.image,
+        container
     );
-
-    const screenFsm = new GameScreenFSM({
+    const screens = {
         'menu': menuScreen,
         'gameplay': gameplayScreen
-    }, 'gameplay');
+    };
 
-    gameplayScreen.start();
+    const screenFsm = new GameScreenFSM(screens);
+    screenFsm.transitionTo('menu');
 }
 
 waitForDocumentLoad()

@@ -2,18 +2,19 @@ import { GameScreen } from './game-screen';
 
 export class GameScreenFSM<TScreens extends { [key: string]: GameScreen }> {
     screens: TScreens;
-    currentScreen: keyof TScreens;
+    currentScreen: keyof TScreens | null;
 
     constructor(
-        screens: TScreens,
-        currentScreen: keyof TScreens
+        screens: TScreens
     ) {
         this.screens = screens;
-        this.currentScreen = currentScreen;
+        this.currentScreen = null;
     }
 
     async transitionTo(newScreen: keyof TScreens) {
-        await this.screens[this.currentScreen].stop();
+        if (this.currentScreen != null) {
+            await this.screens[this.currentScreen].stop();
+        }
         this.currentScreen = newScreen;
         await this.screens[this.currentScreen].start();
     }

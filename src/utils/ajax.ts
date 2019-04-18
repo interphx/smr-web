@@ -6,7 +6,7 @@ export function loadImage(src: string) {
 
         const tmp: number[] = [0, 0, 0];
         const processRgb =
-            (src.indexOf('background') >= 0)
+            (false && src.indexOf('background') >= 0)
                 ? (r: number, g: number, b: number) => {
                     tmp[0] = Math.max(0, r - 40);
                     tmp[1] = Math.max(0, g - 40);
