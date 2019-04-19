@@ -15,11 +15,12 @@ import { TrackedEntity } from 'core/tracking-table';
 import { copyArray } from 'utils/iterable';
 import { ImageAssetLoader } from 'core/image-asset-loader';
 import { AssetLoader } from 'core/asset-loader';
+import { Body } from 'components/body';
 
 const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
 const cameraAspect = aspect.all(Transform, Camera);
-const characterAspect = aspect.all(Character);
+const characterAspect = aspect.all(Character, Body);
 
 const heartFullRect = Aabb.fromSize(0, 0, 32, 28);
 const heartEmptyRect = Aabb.fromSize(32, 0, 32, 28);
@@ -109,8 +110,9 @@ export class RenderingSystem {
         }
 
         if (characters.length > 0) {
-            const [characterData] = characters[0].components;
-            renderer.drawText(0, -200, characterData.score.toFixed(0));
+            const [characterData, characterBody] = characters[0].components;
+            renderer.drawText(0, -200, 'Score: ' + characterData.score.toFixed(0));
+            renderer.drawText(0, -160, 'Speed: ' + (characterBody.velocity.x * 1).toFixed(5));
 
             if (this.textures) {
                 for (let i = 0; i < characterData.maxLives; ++i) {
@@ -129,6 +131,6 @@ export class RenderingSystem {
         }
 
         this.lastFps = this.lastFps * 0.9 + (1000 / dt) * 0.1;
-        renderer.drawText(0, -100, this.lastFps.toFixed(0));
+        renderer.drawText(0, -120, 'FPS: ' + this.lastFps.toFixed(0));
     }
 }
