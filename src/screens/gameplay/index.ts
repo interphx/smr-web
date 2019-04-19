@@ -1,4 +1,4 @@
-import { GameScreen } from './game-screen';
+import { GameScreen } from 'screens/game-screen';
 import { EntityStorage } from 'core/entity-storage';
 import { AssetLoader } from 'core/asset-loader';
 import { Character } from 'components/character';

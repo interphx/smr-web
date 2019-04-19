@@ -3,7 +3,7 @@ import { Renderer } from 'core/renderer';
 import { KeyboardInput } from 'input/keyboard';
 import { PointerInput } from 'input/pointer';
 import { GameScreenFSM } from 'screens/game-screen-fsm';
-import { GameplayGameScreen } from 'screens/gameplay-game-screen';
+import { GameplayGameScreen } from 'screens/gameplay';
 import { MenuGameScreen } from 'screens/menu';
 import { Milliseconds } from 'types/milliseconds';
 import { Vec2 } from 'types/vec2';
