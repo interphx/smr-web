@@ -50,6 +50,22 @@ const config = {
                         name: '[path][name].[hash].[ext]'
                     }
                 }
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    {
+                        loader: 'style-loader'
+                    },
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            url: false,
+                            modules: true,
+                            camelCase: 'dashes'
+                        }
+                    }
+                ]
             }
         ]
     },

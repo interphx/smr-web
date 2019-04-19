@@ -1,0 +1,35 @@
+.menu {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-image: url('assets/images/menu_background.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.items {
+    position: absolute;
+    left: 4%;
+    top: 35%;
+}
+
+.button {
+    color: yellow;
+    font-size: 48px;
+    background: none;
+    border: none;
+    display: block;
+    outline: none;
+}
+
+.button::before {
+    content: '\00a0';
+}
+
+.button:hover, .button:focus {
+    color: white;
+}
+
+.button:hover::before, .button:focus::before {
+    content: '>';
+}

@@ -6,6 +6,7 @@
     "jsx": "react",
     "baseUrl": "./src",
     "downlevelIteration": false,
+    "plugins": [],
     
     "strict": true,
     "noImplicitReturns": true,
