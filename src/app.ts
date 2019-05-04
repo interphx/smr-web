@@ -56,7 +56,7 @@ async function main() {
         size           : Vec2.clone(INITIAL_SCREEN_SIZE),
         resolution     : TARGET_SIZE,
         backgroundColor: 'black',
-        enableSmoothing: true
+        enableSmoothing: false
     });
     const keyboard = new KeyboardInput();
     const pointer = new PointerInput();

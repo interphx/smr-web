@@ -6,6 +6,8 @@ export class Renderer {
     private size: Vec2;
     private backgroundColor: string;
 
+    private roundCoordinate: (value: number) => number;
+    private scale: Vec2;
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
 
@@ -20,6 +22,7 @@ export class Renderer {
         this.backgroundColor = options.backgroundColor;
 
         const scale = Vec2.div(this.size, this.resolution);
+        this.scale = scale;
         const pixelRatio = window.devicePixelRatio || 1;
 
         this.canvas = document.createElement('canvas');
@@ -45,11 +48,15 @@ export class Renderer {
         (this.context as any).webkitImageSmoothingEnabled = options.enableSmoothing;
         (this.context as any).msImageSmoothingEnabled = options.enableSmoothing;
         this.context.imageSmoothingEnabled = options.enableSmoothing;
-        this.context.scale(scale.x * pixelRatio, scale.y * pixelRatio);
+        this.context.scale(pixelRatio, pixelRatio);
         this.context.textAlign = 'center';
+        
+        this.roundCoordinate = (options.enableSmoothing)
+            ? value => Math.round(value)
+            : value => value;
 
         this.context.fillStyle = this.backgroundColor;
-        this.context.translate(this.resolution.x / 2, this.resolution.y / 2);
+        this.context.translate(this.resolution.x / 2 * scale.x, this.resolution.y / 2 * scale.y);
         this.clear();
     }
 
@@ -62,10 +69,14 @@ export class Renderer {
     }
 
     public drawRect(topLeft: Vec2, size: Vec2, backgroundColor: string, strokeColor: string) {
+        const scale = this.scale;
+        const scaleX = scale.x;
+        const scaleY = scale.y;
+
         this.context.fillStyle = backgroundColor;
         this.context.strokeStyle = strokeColor;
-        this.context.fillRect(topLeft.x, topLeft.y, size.x, size.y);
-        this.context.strokeRect(topLeft.x, topLeft.y, size.x, size.y);
+        this.context.fillRect(topLeft.x, topLeft.y, size.x * scaleX, size.y * scaleY);
+        this.context.strokeRect(topLeft.x, topLeft.y, size.x * scaleX, size.y * scaleY);
     }
 
     public drawImage(topLeft: Vec2, image: HTMLImageElement | HTMLCanvasElement) {
@@ -78,12 +89,17 @@ export class Renderer {
         targetSize: Vec2,
         image: HTMLImageElement | HTMLCanvasElement
     ) {
+        const scale = this.scale;
+        const scaleX = scale.x;
+        const scaleY = scale.y;
+        const roundCoordinate = this.roundCoordinate;
+
         this.context.drawImage(
             image,
             sourceRect.left, sourceRect.top,
             sourceRect.width, sourceRect.height,
-            x, y,
-            targetSize.x, targetSize.y
+            roundCoordinate(x * scaleX), roundCoordinate(y * scaleY),
+            targetSize.x * scaleX, targetSize.y * scaleY
         );
     }
 
@@ -94,28 +110,37 @@ export class Renderer {
         image: HTMLImageElement | HTMLCanvasElement,
         opacity: number
     ) {
-        //const oldAlpha = this.context.globalAlpha;
+        const scale = this.scale;
+        const scaleX = scale.x;
+        const scaleY = scale.y;
+        const roundCoordinate = this.roundCoordinate;
+
         this.context.globalAlpha = opacity;
         this.context.drawImage(
             image,
             sourceRect.left, sourceRect.top,
             sourceRect.width, sourceRect.height,
-            topLeft.x, topLeft.y,
-            targetSize.x, targetSize.y
+            roundCoordinate(topLeft.x * scaleX), roundCoordinate(topLeft.y * scaleY),
+            targetSize.x * scaleX, targetSize.y * scaleY
         );
-        //this.context.globalAlpha = oldAlpha;
     }
 
     public drawText(x: number, y: number, text: string) {
+        x = x * this.scale.x;
+        y = y * this.scale.y;
+
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 2;
         this.context.font = '16px Main';
-        this.context.strokeText(text, x, y);
+        this.context.strokeText(text, x , y);
         this.context.fillText(text, x, y);
     }
 
     public drawTextWithOpacity(x: number, y: number, text: string, opacity: number) {
+        x = x * this.scale.x;
+        y = y * this.scale.y;
+
         this.context.fillStyle = 'white'; //'#f5f59c';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 2;
