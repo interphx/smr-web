@@ -5,6 +5,9 @@
     background-image: url('assets/images/menu_background.png');
     background-repeat: no-repeat;
     background-size: cover;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }
 
 .items {
@@ -15,11 +18,12 @@
 
 .button {
     color: yellow;
-    font-size: 48px;
+    font-size: 36px;
     background: none;
     border: none;
     display: block;
     outline: none;
+    margin-top: 32px;
 }
 
 .button::before {

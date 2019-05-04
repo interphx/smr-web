@@ -17,12 +17,12 @@ export class SpeedSystem {
 
         for (let { components: [character, body, animation] } of characters) {
             if (character.isAlive()) {
-                body.velocity.x += 0.0000001 / Math.max(0.001, body.velocity.x) * dt;
+                body.velocity.x += 0.0000003 / Math.max(0.001, body.velocity.x) * dt;
             } else {
                 body.velocity.x *= 0.98;
             }
 
-            animation.setSpeed(body.velocity.x * 5);
+            animation.setSpeed(body.velocity.x * 6);
         }
     }
 }

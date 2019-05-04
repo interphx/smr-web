@@ -109,15 +109,17 @@ export class Renderer {
     public drawText(x: number, y: number, text: string) {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'black';
-        this.context.font = '24px monospace';
+        this.context.lineWidth = 2;
+        this.context.font = '16px Main';
         this.context.strokeText(text, x, y);
         this.context.fillText(text, x, y);
     }
 
     public drawTextWithOpacity(x: number, y: number, text: string, opacity: number) {
-        this.context.fillStyle = '#f5f59c';
+        this.context.fillStyle = 'white'; //'#f5f59c';
         this.context.strokeStyle = 'black';
-        this.context.font = '24px monospace';
+        this.context.lineWidth = 2;
+        this.context.font = '16px Main';
         this.context.globalAlpha = opacity;
         this.context.strokeText(text, x, y);
         this.context.fillText(text, x, y);

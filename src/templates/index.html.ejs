@@ -10,16 +10,26 @@
         <%= htmlWebpackPlugin.options.title %>
     </title>
     <style>
+        @font-face {
+            font-family: 'Main';
+            font-display: block;
+            src: url('assets/fonts/press-start-2p-regulrar.woff2') format('woff2'),
+                 url('assets/fonts/press-start-2p-regulrar.woff') format('woff'), 
+                 url('assets/fonts/press-start-2p-regulrar.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         html, body {
             padding: 0;
             margin: 0;
             font-size: 16px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Main, 'Courier New', Courier, monospace;
         }
 
         input, button {
             font-size: 16px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Main, 'Courier New', Courier, monospace;
         }
 
         button {
