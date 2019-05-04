@@ -146,7 +146,7 @@ async function createGameLoop(
     });
     const damageSystem = new DamageSystem(storage);
     // const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
-    const speedSystem = new SpeedSystem(storage);
+    const speedSystem = new SpeedSystem(storage, -60);
 
     await worldGenerationSystem.initialize();
     await renderingSystem.initialize();
