@@ -7,6 +7,7 @@ export class Renderer {
     private backgroundColor: string;
 
     private roundCoordinate: (value: number) => number;
+    private font: string;
     private scale: Vec2;
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
@@ -24,6 +25,8 @@ export class Renderer {
         const scale = Vec2.div(this.size, this.resolution);
         this.scale = scale;
         const pixelRatio = window.devicePixelRatio || 1;
+
+        this.font = `${16 * Math.min(this.scale.x, this.scale.y)}px Main`;
 
         this.canvas = document.createElement('canvas');
         this.canvas.width = this.resolution.x * scale.x * pixelRatio;
@@ -104,7 +107,7 @@ export class Renderer {
     }
 
     public drawImageRectWithOpacity(
-        topLeft: Vec2,
+        x: number, y: number,
         sourceRect: Aabb,
         targetSize: Vec2,
         image: HTMLImageElement | HTMLCanvasElement,
@@ -120,9 +123,10 @@ export class Renderer {
             image,
             sourceRect.left, sourceRect.top,
             sourceRect.width, sourceRect.height,
-            roundCoordinate(topLeft.x * scaleX), roundCoordinate(topLeft.y * scaleY),
+            roundCoordinate(x * scaleX), roundCoordinate(y * scaleY),
             targetSize.x * scaleX, targetSize.y * scaleY
         );
+        this.context.globalAlpha = 1;
     }
 
     public drawText(x: number, y: number, text: string) {
@@ -132,9 +136,21 @@ export class Renderer {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 2;
-        this.context.font = '16px Main';
+        this.context.font = this.font;
         this.context.strokeText(text, x , y);
         this.context.fillText(text, x, y);
+    }
+
+    public drawTextRightAligned(x: number, y: number, text: string) {
+        this.context.textAlign = 'right';
+        this.drawText(x, y, text);
+        this.context.textAlign = 'center';
+    }
+
+    public drawTextLeftAligned(x: number, y: number, text: string) {
+        this.context.textAlign = 'left';
+        this.drawText(x, y, text);
+        this.context.textAlign = 'center';
     }
 
     public drawTextWithOpacity(x: number, y: number, text: string, opacity: number) {
@@ -144,7 +160,7 @@ export class Renderer {
         this.context.fillStyle = 'white'; //'#f5f59c';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 2;
-        this.context.font = '16px Main';
+        this.context.font = this.font;
         this.context.globalAlpha = opacity;
         this.context.strokeText(text, x, y);
         this.context.fillText(text, x, y);

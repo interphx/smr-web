@@ -17,6 +17,8 @@ import { ImageAssetLoader } from 'core/image-asset-loader';
 import { AssetLoader } from 'core/asset-loader';
 import { Body } from 'components/body';
 
+const FLICKER_INTERVAL = 80;
+
 const spriteAspect = aspect.all(Transform, StaticSprite);
 const textAspect = aspect.all(Transform, Text);
 const cameraAspect = aspect.all(Transform, Camera);
@@ -32,6 +34,7 @@ function compareSprites(a: {components:[unknown, {zIndex: number}]}, b: {compone
 }
 
 export class RenderingSystem {
+    private flickerCounter: number = 0;
     private textures: {
         heart: Image;
     } | null = null;
@@ -51,6 +54,8 @@ export class RenderingSystem {
     private lastFps: number = 60;
     run(dt: Milliseconds, alpha: number) {
         const { storage, renderer } = this;
+
+        this.flickerCounter = (this.flickerCounter + dt) % (FLICKER_INTERVAL*2);
 
         renderer.clear();
 
@@ -97,8 +102,11 @@ export class RenderingSystem {
                     continue;
                 }
 
-                if (sprite.isGhost && Math.random() < 0.5) continue;
-                renderer.drawImageRect(posX, posY, sprite.sourceRect, sprite.targetSize, sprite.texture);
+                if (sprite.isGhost && (this.flickerCounter > FLICKER_INTERVAL)) {
+                    renderer.drawImageRectWithOpacity(posX, posY, sprite.sourceRect, sprite.targetSize, sprite.texture, 0.25);
+                } else {
+                    renderer.drawImageRect(posX, posY, sprite.sourceRect, sprite.targetSize, sprite.texture);
+                }
             }
 
             for (let { components: [transform, text] } of texts) {
@@ -111,8 +119,9 @@ export class RenderingSystem {
 
         if (characters.length > 0) {
             const [characterData, characterBody] = characters[0].components;
-            renderer.drawText(0, -200, 'Score: ' + characterData.score.toFixed(0));
-            renderer.drawText(0, -160, 'Speed: ' + (characterBody.velocity.x * 1).toFixed(5));
+            renderer.drawTextRightAligned(300, -180, 'Score: ' + characterData.score.toFixed(0));
+            renderer.drawTextLeftAligned(-290, -140, 'Bonus: ' + characterData.bonusReadiness.toFixed(0));
+            //renderer.drawText(0, -160, 'Speed: ' + (characterBody.velocity.x * 1).toFixed(5));
 
             if (this.textures) {
                 for (let i = 0; i < characterData.maxLives; ++i) {
@@ -131,6 +140,6 @@ export class RenderingSystem {
         }
 
         this.lastFps = this.lastFps * 0.9 + (1000 / dt) * 0.1;
-        renderer.drawText(0, -120, 'FPS: ' + this.lastFps.toFixed(0));
+        //renderer.drawText(0, -120, 'FPS: ' + this.lastFps.toFixed(0));
     }
 }
