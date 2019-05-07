@@ -5,6 +5,8 @@ import { Collider, CollisionLayer } from 'components/collider';
 import { Character } from 'components/character';
 import { StaticSprite } from 'components/static-sprite';
 import { all } from 'core/aspect';
+import { EventQueue } from 'core/event-queue';
+import { GameOverEvent } from 'events/game-over';
 
 const characterAspect = all(Body, Collider, Character, StaticSprite);
 
@@ -12,7 +14,10 @@ export class DamageSystem {
     private oldVelocity: number = NaN;
     private oldGhostState: boolean = false;
 
-    constructor(private storage: EntityStorage) {
+    constructor(
+        private storage: EntityStorage,
+        private eventQueue: EventQueue
+    ) {
 
     }
 
@@ -33,17 +38,14 @@ export class DamageSystem {
                 collider.collidesWith &= ~CollisionLayer.Obstacle;
                 sprite.isGhost = true;
                 body.velocity.x = 0.25;
-                /*if (characterData.remainingLives <= 0) {
-                    throw new Error(`Game over`);
-                }*/
+                if (characterData.remainingLives <= 0) {
+                    sprite.isGhost = false;
+                    this.eventQueue.dispatch(new GameOverEvent(characterData.score));
+                }
             }
 
             this.oldVelocity = body.velocity.x;
             this.oldGhostState = characterData.isGhost();
-
-            /*if (characterData.isAlive()) {
-                body.velocity.x += 0.0000001 / body.velocity.x * dt;
-            }*/
         }
     }
 }

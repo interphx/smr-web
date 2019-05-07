@@ -1,0 +1,48 @@
+.game-over-menu {
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    top: 25%;
+    bottom: 25%;
+    background-color: black;
+    background-image: url('assets/images/game_over.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    color: yellow;
+    text-align: center;
+    z-index: 999;
+}
+
+.score {
+    margin-top: 42%;
+}
+
+.options {
+    display: inline-block;
+    margin-top: 3%;
+    text-align: left;
+}
+
+.button {
+    margin-top: 10%;
+    display: block;
+    color: yellow;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.button::before {
+    content: '\00a0';
+}
+
+.button:hover, .button:focus {
+    color: white;
+}
+
+.button:hover::before, .button:focus::before {
+    content: '>';
+}

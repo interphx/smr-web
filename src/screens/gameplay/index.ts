@@ -32,8 +32,10 @@ import { DamageSystem } from 'systems/damage';
 import { SpeedSystem } from 'systems/speed';
 import { GameLoop } from 'core/game-loop';
 import { Text } from 'components/text';
+import { EventQueue } from 'core/event-queue';
+import { GameOverSystem } from 'systems/game-over-system';
 
-type ScreenSetter = (screenName: 'menu') => void;
+type ScreenSetter = (screenName: 'menu' | 'gameplay') => void;
 
 const TARGET_SIZE = Vec2.fromCartesian(640, 480);
 
@@ -67,10 +69,14 @@ async function createCharacter(storage: EntityStorage, imageLoader: AssetLoader<
     const jumpApexFrames = frames.slice(8, 9);
     const jumpDescendingFrames = frames.slice(9, 10);
 
+    const fallFrames = frames.slice(10, 12);
+    fallFrames[0].relativeDuration = 3;
+    fallFrames[1].relativeDuration = 1;
+
     storage.setComponents(character, [
         new StaticSprite({
             texture,
-            zIndex: 1,
+            zIndex: 100,
             rect: Aabb.fromSize(0, 0, 128, 128)
         }),
         new FrameAnimation({
@@ -94,6 +100,11 @@ async function createCharacter(storage: EntityStorage, imageLoader: AssetLoader<
                     duration: Milliseconds.from(600),
                     frames: jumpDescendingFrames,
                     mode: 'repeat'
+                },
+                'fall': {
+                    duration: Milliseconds.from(1200),
+                    frames: fallFrames,
+                    mode: 'once'
                 }
             },
             currentAnimation: 'run'
@@ -117,7 +128,9 @@ async function createGameLoop(
     renderer: Renderer,
     keyboardInput: KeyboardInput,
     pointerInput: PointerInput,
-    targetSize: Vec2
+    targetSize: Vec2,
+    container: Node,
+    setScreen: ScreenSetter
 ) {
     const storage = new EntityStorage();
     storage.registerComponentType(Transform);
@@ -134,6 +147,8 @@ async function createGameLoop(
     storage.registerComponentType(FloatingText);
     setup(storage);
 
+    const eventQueue = new EventQueue();
+
     const renderingSystem = new RenderingSystem(storage, renderer, imageLoader);
     const cameraSystem = new CameraSystem(storage);
     const physicsSystem = new PhysicsSystem(storage);
@@ -144,12 +159,20 @@ async function createGameLoop(
     const scoringSystem = new ScoringSystem(storage, entity => {
         storage.removeEntity(entity);
     });
-    const damageSystem = new DamageSystem(storage);
+    const damageSystem = new DamageSystem(storage, eventQueue);
     // const debugRenderingSystem = new DebugRenderingSystem(storage, renderer);
     const speedSystem = new SpeedSystem(storage, -60);
+    const gameOverSystem = new GameOverSystem(
+        storage,
+        eventQueue,
+        container,
+        () => setScreen('gameplay'),
+        () => setScreen('menu')
+    );
 
     await worldGenerationSystem.initialize();
     await renderingSystem.initialize();
+    await gameOverSystem.initialize();
 
     let frameCount = 0;
 
@@ -175,6 +198,7 @@ async function createGameLoop(
                 worldGenerationSystem.run(dt);
             }
 
+            eventQueue.handleEvents();
             storage.handleRemovals();
         }
     });
@@ -206,7 +230,9 @@ export class GameplayGameScreen implements GameScreen {
             this.renderer,
             this.keyboard,
             this.pointer,
-            TARGET_SIZE
+            TARGET_SIZE,
+            this.container,
+            this.setScreen
         );
         this.loop.start();
     }
