@@ -120,7 +120,7 @@ export class RenderingSystem {
         if (characters.length > 0) {
             const [characterData, characterBody] = characters[0].components;
             renderer.drawTextRightAligned(300, -180, 'Score: ' + characterData.score.toFixed(0));
-            renderer.drawTextLeftAligned(-290, -140, 'Bonus: ' + characterData.bonusReadiness.toFixed(0));
+            renderer.drawTextLeftAligned(-290, -140, 'Bonus: ' + characterData.bonusReadiness.toFixed(0) + '%');
             //renderer.drawText(0, -160, 'Speed: ' + (characterBody.velocity.x * 1).toFixed(5));
 
             if (this.textures) {

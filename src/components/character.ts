@@ -16,9 +16,10 @@ export class Character {
 
     addScore(amount: number) {
         this.score += amount;
-        if (amount >= 10) {
-            this.bonusReadiness = clamp(this.bonusReadiness + 10, 0, 100);
-        }
+    }
+
+    addBonusReadiness(amount: number) {
+        this.bonusReadiness = clamp(this.bonusReadiness + amount, 0, 100);
     }
 
     useBonus() {

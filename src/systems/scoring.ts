@@ -40,6 +40,7 @@ export class ScoringSystem {
                 const collidingTransform = storage.getComponent(collidingEntity, Transform);
                 if (collidingCollectible && collidingTransform) {
                     data.addScore(collidingCollectible.score);
+                    data.addBonusReadiness(5);
                     this.onAmplifierRemove(collidingEntity);
 
                     const existingText = this.floatingTextPool.getEntity();

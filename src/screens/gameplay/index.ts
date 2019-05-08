@@ -34,6 +34,7 @@ import { GameLoop } from 'core/game-loop';
 import { Text } from 'components/text';
 import { EventQueue } from 'core/event-queue';
 import { GameOverSystem } from 'systems/game-over-system';
+import { BonusSystem } from 'systems/bonus';
 
 type ScreenSetter = (screenName: 'menu' | 'gameplay') => void;
 
@@ -169,6 +170,7 @@ async function createGameLoop(
         () => setScreen('gameplay'),
         () => setScreen('menu')
     );
+    const bonusSystem = new BonusSystem(storage, keyboardInput);
 
     await worldGenerationSystem.initialize();
     await renderingSystem.initialize();
@@ -192,6 +194,7 @@ async function createGameLoop(
             
             damageSystem.run(dt);
             speedSystem.run(dt);
+            bonusSystem.run(dt);
 
             frameCount += 1;
             if ((frameCount < 5) || (frameCount % 15 === 0)) {
